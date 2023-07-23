@@ -1,79 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:kpostal/kpostal.dart';
 
-class HomeView extends StatefulWidget {
-  HomeView({super.key});
+class HomeView extends StatelessWidget {
+  Function onTapCreate;
 
-  @override
-  State<HomeView> createState() => _HomeViewState();
-}
+  HomeView({required this.onTapCreate, super.key});
 
-class _HomeViewState extends State<HomeView> {
   String postCode = '-';
+
   String address = '-';
+
   String latitude = '-';
+
   String longitude = '-';
+
   String kakaoLatitude = '-';
+
   String kakaoLongitude = '-';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(40.0),
-              child: Column(
-                children: [
-                  Text('postCode',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('result: ${this.postCode}'),
-                  Text('address',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('result: ${this.address}'),
-                  Text('LatLng', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(
-                      'latitude: ${this.latitude} / longitude: ${this.longitude}'),
-                  Text('through KAKAO Geocoder',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(
-                      'latitude: ${this.kakaoLatitude} / longitude: ${this.kakaoLongitude}'),
-                ],
-              ),
+      body: Column(
+        children: [
+          const SizedBox(
+            height: 50,
+          ),
+          const Text(
+            '분뇨 수집•운반 수수료 확인서 목록',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
-            TextButton(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => KpostalView(
-                      useLocalServer: true,
-                      localPort: 1024,
-                      // kakaoKey: '{Add your KAKAO DEVELOPERS JS KEY}',
-                      callback: (Kpostal result) {
-                        setState(() {
-                          this.postCode = result.postCode;
-                          this.address = result.address;
-                          this.latitude = result.latitude.toString();
-                          this.longitude = result.longitude.toString();
-                          this.kakaoLatitude = result.kakaoLatitude.toString();
-                          this.kakaoLongitude = result.kakaoLongitude.toString();
-                        });
-                      },
-                    ),
-                  ),
-                );
-              },
+          ),
+          const SizedBox(
+            height: 20,
+          ),
+          Container(
+            padding: const EdgeInsets.only(right: 20),
+            width: double.infinity,
+            alignment: Alignment.topRight,
+            child: TextButton(
+              onPressed: () => onTapCreate(),
               style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(Colors.blue)),
-              child: Text(
-                'Search Address',
+                  backgroundColor:
+                      MaterialStateProperty.all<Color>(Colors.blue)),
+              child: const Text(
+                '신규 확인서 작성',
                 style: TextStyle(color: Colors.white),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
