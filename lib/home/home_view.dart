@@ -30,7 +30,7 @@ class HomeView extends StatelessWidget {
             '분뇨 수집•운반 수수료 확인서 목록',
             style: TextStyle(
               color: Colors.black,
-              fontSize: 18,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
           ),
