@@ -45,7 +45,7 @@ class HomeView extends StatelessWidget {
               onPressed: () => onTapCreate(),
               style: ButtonStyle(
                   backgroundColor:
-                      MaterialStateProperty.all<Color>(Colors.blue)),
+                      MaterialStateProperty.all<Color>(Color(0xFF0005D0))),
               child: const Text(
                 '신규 확인서 작성',
                 style: TextStyle(color: Colors.white),

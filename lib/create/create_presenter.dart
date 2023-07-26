@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:kpostal/kpostal.dart';
@@ -21,8 +22,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
   String _contact = '';
   String _address = '';
   String _addressDetail = '';
-  String _type = '분뇨';
-  DateTime? _date = DateTime.now();
+    DateTime? _date = DateTime.now();
   String _size = '';
   String _cost = '';
   String _numOfCar = '91루0799';
@@ -33,6 +33,62 @@ class _CreatePresenterState extends State<CreatePresenter> {
   TextEditingController _addressDetailController = TextEditingController();
   TextEditingController _sizeController = TextEditingController();
   TextEditingController _costController = TextEditingController();
+  final TextEditingController _typeAheadController = TextEditingController();
+  List<String> _suggestionAddress = [];
+  final List<String> _addressList = [
+    '강원도 영월군 영월읍 거운리',
+    '강원도 영월군 영월읍 덕포리',
+    '강원도 영월군 영월읍 문산리',
+    '강원도 영월군 영월읍 방절리',
+    '강원도 영월군 영월읍 삼옥리',
+    '강원도 영월군 영월읍 영흥리',
+    '강원도 영월군 영월읍 하송리',
+    '강원도 영월군 영월읍 팔괴리',
+    '강원도 영월군 영월읍 흥월리',
+    '강원도 영월군 상동읍 구래리',
+    '강원도 영월군 상동읍 내덕리',
+    '강원도 영월군 산솔면 녹전리',
+    '강원도 영월군 산솔면 연상리',
+    '강원도 영월군 산솔면 이목리',
+    '강원도 영월군 산솔면 직동리',
+    '강원도 영월군 산솔면 화목리',
+    '강원도 영월군 김삿갓면 각동리',
+    '강원도 영월군 김삿갓면 내리',
+    '강원도 영월군 김삿갓면 대야리',
+    '강원도 영월군 김삿갓면 예밀리',
+    '강원도 영월군 김삿갓면 옥동리',
+    '강원도 영월군 김삿갓면 와석리',
+    '강원도 영월군 김삿갓면 와룡리',
+    '강원도 영월군 김삿갓면 주문리',
+    '강원도 영월군 김삿갓면 진별리',
+    '강원도 영월군 북면 공기리',
+    '강원도 영월군 북면 덕상리',
+    '강원도 영월군 북면 마차리',
+    '강원도 영월군 북면 문곡리',
+    '강원도 영월군 북면 연덕리',
+    '강원도 영월군 남면 연당리',
+    '강원도 영월군 남면 창원리',
+    '강원도 영월군 남면 토쿄리',
+    '강원도 영월군 남면 조전리',
+    '강원도 영월군 남면 광천리',
+    '강원도 영월군 남면 북쌍리',
+    '강원도 영월군 한반도면 광전리',
+    '강원도 영월군 한반도면 신천리',
+    '강원도 영월군 한반도면 쌍용리',
+    '강원도 영월군 한반도면 옹정리',
+    '강원도 영월군 한반도면 후탄리',
+    '강원도 영월군 주천면 금마리',
+    '강원도 영월군 주천면 도천리',
+    '강원도 영월군 주천면 신일리',
+    '강원도 영월군 주천면 용석리',
+    '강원도 영월군 주천면 주천리',
+    '강원도 영월군 주천면 판운리',
+    '강원도 영월군 무릉도원면 도원리',
+    '강원도 영월군 무릉도원면 두산리',
+    '강원도 영월군 무릉도원면 무릉리',
+    '강원도 영월군 무릉도원면 법흥리',
+    '강원도 영월군 무릉도원면 운학리',
+  ];
   final SignatureController _sign1Controller = SignatureController(
     penStrokeWidth: 2,
     penColor: Colors.black,
@@ -41,13 +97,29 @@ class _CreatePresenterState extends State<CreatePresenter> {
     penStrokeWidth: 2,
     penColor: Colors.black,
   );
-
-  List<String> _typeList = [
-    '분뇨',
-    '정화조',
-    '오수처리시설',
-  ];
   List<String> _numOfCarList = ['91루0799', '89보7775', '80마3320'];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _initTempData();
+  }
+
+  /// 임시저장 데이터 있는 경우 불러오기
+  void _initTempData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    _nameController.text = prefs.getString('name') ?? '';
+    _contactController.text = prefs.getString('contact') ?? '';
+    _address = prefs.getString('address') ?? '';
+    _addressDetailController.text = prefs.getString('address_detail') ?? '';
+    // prefs.getString('type');
+    _date = DateTime.parse(prefs.getString('date') ?? DateTime.now().toString());
+    _sizeController.text = prefs.getString('size') ?? '';
+    _costController.text = prefs.getString('cost') ?? '';
+    _numOfCar = prefs.getString('numOfCar') ?? '91루0799';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +128,6 @@ class _CreatePresenterState extends State<CreatePresenter> {
       contact: _contact,
       address: _address,
       addressDetail: _addressDetail,
-      type: _type,
-      typeList: _typeList,
       date: _date!,
       size: _size,
       cost: _cost,
@@ -70,8 +140,8 @@ class _CreatePresenterState extends State<CreatePresenter> {
       costController: _costController,
       png1Bytes: _png1Bytes ?? Uint8List(1),
       png2Bytes: _png2Bytes ?? Uint8List(1),
-      onTapSave: () => _onTapSave(),
-      onTapTempSave: () => _onTapTempSave(),
+      // onTapSave: () => _onTapSave(),
+      onTapTempSave: (type) => _onTapTempSave(type),
       onTapCancel: () => _onTapCancel(),
       onTapPickDate: () => _onTapPickDate(),
       onTapSearchAddress: () => _onTapSearchAddress(),
@@ -81,14 +151,18 @@ class _CreatePresenterState extends State<CreatePresenter> {
     );
   }
 
-  void _onTapSave() async {
-    Fluttertoast.showToast(msg: '저장 되었습니다.');
-  }
-
-  void _onTapTempSave() async {
+  void _onTapTempSave(String type) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    await prefs.setString('name', 'kkkk');
+    await prefs.setString('name', _nameController.text);
+    await prefs.setString('contact', _contactController.text);
+    await prefs.setString('address', _address);
+    await prefs.setString('address_detail', _addressDetailController.text);
+    await prefs.setString('type', type);
+    await prefs.setString('date', _date.toString());
+    await prefs.setString('size', _sizeController.text);
+    await prefs.setString('cost', _costController.text);
+    await prefs.setString('numOfCar', _numOfCar);
 
     Fluttertoast.showToast(msg: '임시저장 되었습니다.');
     // print(prefs.getString('name'));
@@ -104,19 +178,89 @@ class _CreatePresenterState extends State<CreatePresenter> {
       initialDatePickerMode: DatePickerMode.year,
       theme: ThemeData(primarySwatch: Colors.green),
     );
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   void _onTapSearchAddress() async {
-    await Get.to(() => KpostalView(
-          useLocalServer: true,
-          localPort: 1024,
-          callback: (Kpostal result) {
-            setState(() {
-              _address = result.address;
-            });
-          },
-        ));
-    print(_address);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('주소'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TypeAheadFormField(
+                noItemsFoundBuilder:(context){
+                  return ListTile(
+                    title: Text("검색 결과 없음", style: TextStyle(color: Color(0xffc8c8c8), fontWeight: FontWeight.w600, fontSize: 18),),
+                  );
+                },
+                textFieldConfiguration: TextFieldConfiguration(
+                  style: TextStyle(color: Color(0xff333333), fontWeight: FontWeight.w500, fontSize: 18),
+                  autofocus: true,
+                  onChanged: (String val){
+                    setState(() {
+                      _suggestionAddress = [];
+                      _searchSchool(val);
+                      // .then((value) {
+                      //   if (value != null) value.forEach((item) => _suggestionAddress.add("$item"));
+                      // });
+                    });
+                  },
+                  controller: _typeAheadController,
+                  decoration: const InputDecoration(
+                    hintText: "주소를 입력하세요.",
+                    hintStyle: TextStyle(color: Color(0xffdedede), fontWeight: FontWeight.w600, fontSize: 18),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xffdedede), width: 2),),
+                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xfffa5f00), width: 2),),
+                  ),
+                ),
+                suggestionsCallback: (pattern) {
+                  return _suggestionAddress;
+                },
+                itemBuilder: (context, suggestion) {
+                  List<String> school = suggestion.toString().split("/");
+                  if(school.length>=2){
+                    return ListTile(
+                      title: Text(school[0], style: TextStyle(color: Color(0xff333333), fontWeight: FontWeight.w500, fontSize: 18),),
+                      subtitle: Text(school[1], style: TextStyle(color: Color(0xff8d8d8d), fontWeight: FontWeight.w400, fontSize: 14),),
+                    );
+                  }
+                  return ListTile(
+                    title: Text(suggestion.toString()),
+                  );
+                },
+                transitionBuilder: (context, suggestionsBox, controller) {
+                  return suggestionsBox;
+                },
+                onSuggestionSelected: (suggestion) {
+                  setState(() {
+                    _address = suggestion;
+                  });
+                  Get.back();
+                  FocusManager.instance.primaryFocus?.unfocus();
+                },
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return '주소를 입력해주세요.';
+                  }
+                },
+                onSaved: (value) {},
+              ),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  _searchSchool(String val) {
+    for(int i = 0; i < _addressList.length; i++) {
+      if (_addressList[i].contains(val)) {
+        _suggestionAddress.add(_addressList[i]);
+      }
+    }
   }
 
   void _onChangedNumOfCar(value) {
@@ -201,6 +345,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
                           _sign2Controller.clear();
                         }
                         Get.back();
+                        FocusManager.instance.primaryFocus?.unfocus();
                       },
                     ),
                   ],

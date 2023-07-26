@@ -1,19 +1,23 @@
+import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:excel/excel.dart' as e;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class CreateView extends StatelessWidget {
+class CreateView extends StatefulWidget {
   String name;
   String contact;
   String address;
   String addressDetail;
-  String type;
-  List<String> typeList;
   DateTime date;
   String size;
   String cost;
@@ -26,22 +30,21 @@ class CreateView extends StatelessWidget {
   TextEditingController addressDetailController;
   TextEditingController sizeController;
   TextEditingController costController;
-  Function onTapSave;
+
+  // Function onTapSave;
   Function onTapTempSave;
   Function onTapCancel;
   Function onTapPickDate;
   Function onTapSearchAddress;
   Function onChangedNumOfCar;
   Function onTapCalendar;
-  // Function onTapSignature;
+  Function onTapSignature;
 
   CreateView(
       {required this.name,
       required this.contact,
       required this.address,
       required this.addressDetail,
-      required this.type,
-      required this.typeList,
       required this.date,
       required this.size,
       required this.cost,
@@ -54,17 +57,23 @@ class CreateView extends StatelessWidget {
       required this.addressDetailController,
       required this.sizeController,
       required this.costController,
-      required this.onTapSave,
+      // required this.onTapSave,
       required this.onTapTempSave,
       required this.onTapCancel,
       required this.onTapPickDate,
       required this.onTapSearchAddress,
       required this.onChangedNumOfCar,
       required this.onTapCalendar,
-      // required this.onTapSignature,
+      required this.onTapSignature,
       super.key});
 
-  final pdf = pw.Document();
+  @override
+  State<CreateView> createState() => _CreateViewState();
+}
+
+class _CreateViewState extends State<CreateView> {
+  late pw.Document pdf;
+  String _type = '분뇨';
 
   @override
   Widget build(BuildContext context) {
@@ -87,29 +96,35 @@ class CreateView extends StatelessWidget {
             const SizedBox(
               height: 20,
             ),
-            _buildInputArea('성명(소유자•관리자)', 'text', controller: nameController),
-            _buildInputArea('연락처', 'text', controller: contactController),
+            _buildInputArea('성명(소유자•관리자)', 'text',
+                controller: widget.nameController),
+            _buildInputArea('연락처', 'text',
+                controller: widget.contactController),
             _buildInputArea('주소(수거장소)', 'address'),
             _buildInputArea('상세주소', 'text',
-                controller: addressDetailController),
+                controller: widget.addressDetailController),
             _buildInputArea('구분', 'type'),
             _buildInputArea('수거•확인일', 'calendar'),
-            _buildInputArea('분뇨수거용량(L)', 'text', controller: sizeController),
-            _buildInputArea('수수료 납부금액', 'text', controller: costController),
+            _buildInputArea('분뇨수거용량(L)', 'text',
+                controller: widget.sizeController),
+            _buildInputArea('수수료 납부금액', 'text',
+                controller: widget.costController),
             _buildInputArea('차량번호', 'select'),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             _buildExtraInfo(),
-            _buildSignatureArea('분뇨수집운반업체', () => onTapSignature('분뇨수집운반업체')),
-            SizedBox(height: 10),
             _buildSignatureArea(
-                '개인하수처리시설\n소유자', () => onTapSignature('개인하수처리시설\n소유자')),
-            SizedBox(height: 20),
+                '분뇨수집운반업체', () => widget.onTapSignature('분뇨수집운반업체')),
+            const SizedBox(height: 10),
+            _buildSignatureArea(
+                '개인하수처리시설\n소유자', () => widget.onTapSignature('개인하수처리시설\n소유자')),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buttonWidget('저장', Color(0xFF0005D0), () => onTapSave()),
-                _buttonWidget('임시저장', Color(0xFF0005D0), () => onTapTempSave()),
-                _buttonWidget('취소', Colors.grey, () => onTapCancel()),
+                _buttonWidget('임시저장', Color(0xFF0005D0),
+                    () => widget.onTapTempSave(_type)),
+                _buttonWidget('취소', Colors.grey, () => widget.onTapCancel()),
               ],
             ),
           ],
@@ -118,64 +133,334 @@ class CreateView extends StatelessWidget {
     );
   }
 
-  void onTapSignature(String s) {
-    pdf.addPage(pw.Page(
-      pageFormat: PdfPageFormat.a4,
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
-          children: [
-            pw.SizedBox(
-              height: 50,
-            ),
-            pw.Text(
-              '분뇨 수집•운반 수수료 확인서',
-              style: pw.TextStyle(
-                color: PdfColors.black,
-                fontSize: 26,
-                fontWeight: pw.FontWeight.bold,
-              ),
-            ),
-            pw.SizedBox(
-              height: 20,
-            ),
-            // _buildInputArea('성명(소유자•관리자)', 'text', controller: nameController),
-            // _buildInputArea('연락처', 'text', controller: contactController),
-            // _buildInputArea('주소(수거장소)', 'address'),
-            // _buildInputArea('상세주소', 'text',
-            //     controller: addressDetailController),
-            // _buildInputArea('구분', 'type'),
-            // _buildInputArea('수거•확인일', 'calendar'),
-            // _buildInputArea('분뇨수거용량(L)', 'text', controller: sizeController),
-            // _buildInputArea('수수료 납부금액', 'text', controller: costController),
-            // _buildInputArea('차량번호', 'select'),
-            // pw.SizedBox(height: 20),
-            // _buildExtraInfo(),
-            // _buildSignatureArea('분뇨수집운반업체', () => onTapSignature('분뇨수집운반업체')),
-            // pw.SizedBox(height: 10),
-            // _buildSignatureArea(
-            //     '개인하수처리시설\n소유자', () => onTapSignature('개인하수처리시설\n소유자')),
-            // pw.SizedBox(height: 20),
-            // pw.Row(
-            //   mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
-            //   children: [
-            //     _buttonWidget('저장', Color(0xFF0005D0), () => onTapSave()),
-            //     _buttonWidget('임시저장', Color(0xFF0005D0), () => onTapTempSave()),
-            //     _buttonWidget('취소', Colors.grey, () => onTapCancel()),
-            //   ],
-            // ),
-          ],
-        );
-      }
-    ),
+  void onTapSave() async {
+    final fontData =
+        await rootBundle.load('assets/fonts/Pretendard-Regular.ttf');
+    final ttf = pw.Font.ttf(fontData);
+
+    /// pdf 파일 만들기
+    pdf = pw.Document();
+    pdf.addPage(
+      pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.SizedBox(
+                  height: 30,
+                ),
+                pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    children: [
+                      pw.Text(
+                        '분뇨 수집•운반 수수료 확인서',
+                        textAlign: pw.TextAlign.center,
+                        style: pw.TextStyle(
+                          color: PdfColors.black,
+                          fontSize: 26,
+                          fontWeight: pw.FontWeight.bold,
+                          font: ttf,
+                        ),
+                      ),
+                    ]),
+                pw.SizedBox(
+                  height: 20,
+                ),
+                _buildPdfInputArea(
+                    '성명(소유자•관리자)', widget.nameController.text, ttf),
+                _buildPdfInputArea('연락처', widget.contactController.text, ttf),
+                _buildPdfInputArea('주소(수거장소)', widget.address, ttf),
+                _buildPdfInputArea(
+                    '상세주소', widget.addressDetailController.text, ttf),
+                _buildPdfInputArea('구분', _type, ttf),
+                _buildPdfInputArea(
+                    '수거•확인일',
+                    '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
+                    ttf),
+                _buildPdfInputArea(
+                    '분뇨수거용량(L)', '${widget.sizeController.text}L', ttf),
+                _buildPdfInputArea(
+                    '수수료 납부금액', '${widget.costController.text}원', ttf),
+                _buildPdfInputArea('차량번호', widget.numOfCar, ttf),
+                pw.SizedBox(height: 20),
+                _buildPdfExtraInfo(ttf),
+                _buildPdfSignatureArea('분뇨수집운반업체', ttf),
+                _buildPdfSignatureArea('개인하수처리시설\n소유자', ttf),
+              ],
+            );
+          }),
     );
 
-    Share.shareXFiles([XFile(pdf)]);
+    final bytes = await pdf.save();
+    final dir = Directory('/storage/emulated/0/Documents');
+    Random r = Random();
+
+    final file = File('${dir.path}/example.pdf');
+    await file.writeAsBytes(bytes);
+    // file
+    //   ..createSync(recursive: true)
+    //   ..writeAsBytesSync(bytes);
+
+    /// 엑셀 만들기
+    saveExcel();
+
+    /// 임시저장 데이터 삭제
+    final prefs = await SharedPreferences.getInstance();
+    prefs.clear();
+    Fluttertoast.showToast(msg: '저장 되었습니다.');
+    Get.back();
+  }
+
+  void saveExcel() async {
+    final dir = Directory('/storage/emulated/0/Documents');
+
+    String year = DateTime.now().year.toString();
+    String month = DateTime.now().month < 10
+        ? '0${DateTime.now().month}'
+        : DateTime.now().month.toString();
+    File file = File('${dir.path}/$year$month.xlsx');
+
+    /// 추가할 행 정리
+    List<dynamic> addData = [
+      widget.nameController.text,
+      widget.contactController.text.length == 11
+          ? '${widget.contactController.text.substring(0, 3)}-${widget.contactController.text.substring(3, 7)}-${widget.contactController.text.substring(7, 11)}'
+          : widget.contactController.text,
+      '${widget.address} ${widget.addressDetailController.text}',
+      _type,
+      '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
+      '${widget.sizeController.text}L',
+      '${widget.costController.text}원',
+      widget.numOfCar,
+    ];
+
+    /// 기존 월에 해당하는 엑셀이 있는 경우
+    if (await file.exists()) {
+      /// 파일 읽기
+      var bytes = file.readAsBytesSync();
+
+      /// 엑셀파일로 열기
+      var excel = e.Excel.decodeBytes(bytes);
+
+      /// Sheet1 선택
+      e.Sheet sheetObject = excel['Sheet1'];
+
+      /// 가장 마지막 입력 row 확인
+      int maxRow = sheetObject.maxRows;
+
+      /// 행 추가
+      sheetObject.insertRowIterables(addData, maxRow);
+
+      /// 파일에 결과 저장
+      List<int>? result = excel.encode();
+      File('${dir.path}/$year$month.xlsx')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(result!);
+    } else {
+      /// 빈 엑셀파일 생성
+      var excel = e.Excel.createExcel();
+
+      /// Sheet1 선택
+      e.Sheet sheetObject = excel['Sheet1'];
+
+      /// 최상단 정보
+      List<dynamic> raw = [
+        "성명(소유자•관리자)".toString(),
+        "연락처".toString(),
+        "주소(수거장소)".toString(),
+        "구분".toString(),
+        "수거•확인일".toString(),
+        "분뇨수거용량(L)".toString(),
+        "수수료 납부금액".toString(),
+        "차량번호".toString(),
+      ];
+
+      /// 최상단 정보 및 행 추가
+      sheetObject.insertRowIterables(raw, 0);
+      sheetObject.insertRowIterables(addData, 1);
+
+      /// 결과 저장
+      List<int>? result = excel.encode();
+      File('${dir.path}/$year$month.xlsx')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(result!);
+      File('${dir.path}/$year$month.xlsx');
+    }
+  }
+
+  pw.Widget _buildPdfInputArea(String title, String description, pw.Font ttf) {
+    /// pdf 생성용 widget
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8.0),
+      child: pw.Row(
+        children: [
+          pw.Flexible(
+            flex: 3,
+            child: pw.SizedBox(
+              height: 32,
+              child: pw.Container(
+                // height: 30,
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.grey300,
+                  border: pw.Border(
+                    left: pw.BorderSide(),
+                    bottom: pw.BorderSide(),
+                    top: pw.BorderSide(),
+                    right: pw.BorderSide(),
+                  ),
+                ),
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  title,
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    font: ttf,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          pw.Expanded(
+              flex: 5,
+              child: pw.SizedBox(
+                height: 32,
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 5),
+                  alignment: pw.Alignment.centerLeft,
+                  decoration: const pw.BoxDecoration(
+                    border: pw.Border(
+                      bottom: pw.BorderSide(),
+                      top: pw.BorderSide(),
+                      right: pw.BorderSide(),
+                    ),
+                  ),
+                  child: pw.Text(
+                    title == '연락처' && description.length == 11
+                        ? '${description.substring(0, 3)}-${description.substring(3, 7)}-${description.substring(7, 11)}'
+                        : description,
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      font: ttf,
+                    ),
+                  ),
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPdfExtraInfo(pw.Font ttf) {
+    return pw.Column(
+      children: [
+        pw.Text(
+            textAlign: pw.TextAlign.center,
+            style: pw.TextStyle(
+              height: 1.5,
+              font: ttf,
+              fontSize: 14,
+            ),
+            '위 기재 사항이 사실과 다름없음을 확인하고\n아래와 같이 서명합니다.\n* 수거업자 준수사항 위반 시 관련법에 따라 처분될 수 있음\n'),
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(
+            right: 16.0,
+            top: 20,
+          ),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.end,
+            children: [
+              pw.RichText(
+                textAlign: pw.TextAlign.right,
+                text: pw.TextSpan(
+                  text: '문의 : 영월군 환경위생과 ',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    color: PdfColors.black,
+                    font: ttf,
+                  ),
+                  children: const [
+                    pw.TextSpan(
+                      text: 'Tel.370-2337',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 24.0),
+          child: pw.Text(
+            '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
+            textAlign: pw.TextAlign.center,
+            style: pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+              font: ttf,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildPdfSignatureArea(String title, pw.Font ttf) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 28.0),
+      child: pw.Row(
+        children: [
+          pw.Text(title,
+              textAlign: pw.TextAlign.center,
+              style: pw.TextStyle(
+                fontSize: 24,
+                font: ttf,
+              )),
+          pw.Expanded(
+            child: pw.Container(
+              color: PdfColors.white,
+              alignment: pw.Alignment.centerRight,
+              child: pw.Stack(
+                alignment: pw.Alignment.centerRight,
+                children: [
+                  if (title == '분뇨수집운반업체')
+                    widget.png1Bytes.length != Uint8List(1).length
+                        ? pw.Image(
+                            pw.MemoryImage(
+                              widget.png1Bytes,
+                            ),
+                            width: 150,
+                            height: 80,
+                          )
+                        : pw.SizedBox(),
+                  if (title != '분뇨수집운반업체')
+                    widget.png2Bytes.length != Uint8List(1).length
+                        ? pw.Image(
+                            pw.MemoryImage(
+                              widget.png2Bytes,
+                            ),
+                            width: 150,
+                            height: 80,
+                          )
+                        : pw.SizedBox(),
+                  pw.Text('(서명)',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        height: 2,
+                        font: ttf,
+                      )),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buttonWidget(String title, Color color, Function onTap) {
     return TextButton(
-      onPressed: () => onTap(), // onTapCreate(),
+      onPressed: () => onTap(),
       style:
           ButtonStyle(backgroundColor: MaterialStateProperty.all<Color>(color)),
       child: Text(
@@ -187,14 +472,14 @@ class CreateView extends StatelessWidget {
 
   Widget _buildSignatureArea(String title, Function onTap) {
     return GestureDetector(
-      onTap: () => onTap(),
+      onTap: () => onTap(), //onTap(),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 28.0),
+        padding: const EdgeInsets.symmetric(horizontal: 28.0),
         child: Row(
           children: [
             Text(title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 24,
                 )),
             Expanded(
@@ -205,17 +490,17 @@ class CreateView extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   children: [
                     if (title == '분뇨수집운반업체')
-                      png1Bytes.length != Uint8List(1).length
+                      widget.png1Bytes.length != Uint8List(1).length
                           ? Image.memory(
-                              png1Bytes,
+                              widget.png1Bytes,
                               width: 150,
                               height: 80,
                             )
                           : const SizedBox(),
                     if (title != '분뇨수집운반업체')
-                      png2Bytes.length != Uint8List(1).length
+                      widget.png2Bytes.length != Uint8List(1).length
                           ? Image.memory(
-                              png2Bytes,
+                              widget.png2Bytes,
                               width: 150,
                               height: 80,
                             )
@@ -245,7 +530,7 @@ class CreateView extends StatelessWidget {
             ),
             '위 기재 사항이 사실과 다름없음을 확인하고\n아래와 같이 서명합니다.\n* 수거업자 준수사항 위반 시 관련법에 따라 처분될 수 있음\n'),
         Padding(
-          padding: EdgeInsets.only(right: 16.0),
+          padding: const EdgeInsets.only(right: 16.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -271,11 +556,11 @@ class CreateView extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(vertical: 24.0),
+          padding: const EdgeInsets.symmetric(vertical: 24.0),
           child: Text(
-            '${date.year}년 ${date.month}월 ${date.day}일',
+            '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -299,7 +584,12 @@ class CreateView extends StatelessWidget {
                   // height: 30,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade300,
-                    border: Border.all(),
+                    border: const Border(
+                      bottom: BorderSide(),
+                      top: BorderSide(),
+                      right: BorderSide(),
+                      left: BorderSide(),
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -325,6 +615,12 @@ class CreateView extends StatelessWidget {
                   height: 30,
                   child: type == 'text'
                       ? TextField(
+                          autofocus: true,
+                          textInputAction: TextInputAction.next,
+                          // focusNode: FocusNode(),
+                          onSubmitted: (value) {
+                            FocusNode().nextFocus();
+                          },
                           controller: controller!,
                           decoration: const InputDecoration(
                             border: InputBorder.none,
@@ -341,7 +637,7 @@ class CreateView extends StatelessWidget {
                       : type == 'address'
                           ? GestureDetector(
                               onTap: () {
-                                onTapSearchAddress();
+                                widget.onTapSearchAddress();
                               },
                               child: Container(
                                 alignment: Alignment.centerLeft,
@@ -351,8 +647,8 @@ class CreateView extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 5, vertical: 0),
                                   child: Text(
-                                    address,
-                                    style: TextStyle(
+                                    widget.address,
+                                    style: const TextStyle(
                                       color: Colors.black,
                                     ),
                                   ),
@@ -372,12 +668,16 @@ class CreateView extends StatelessWidget {
                                         Expanded(
                                           child: Row(
                                             children: [
-                                              Text('분뇨'),
+                                              const Text('분뇨'),
                                               Radio(
+                                                activeColor:
+                                                    const Color(0xFF0005D0),
                                                 value: '분뇨',
-                                                groupValue: typeList,
+                                                groupValue: _type,
                                                 onChanged: (value) {
-                                                  type = value as String;
+                                                  setState(() {
+                                                    _type = value!;
+                                                  });
                                                 },
                                               ),
                                             ],
@@ -386,12 +686,16 @@ class CreateView extends StatelessWidget {
                                         Expanded(
                                           child: Row(
                                             children: [
-                                              Text('정화'),
+                                              const Text('정화'),
                                               Radio(
+                                                activeColor:
+                                                    const Color(0xFF0005D0),
                                                 value: '정화조',
-                                                groupValue: typeList,
+                                                groupValue: _type,
                                                 onChanged: (value) {
-                                                  type = value as String;
+                                                  setState(() {
+                                                    _type = value!;
+                                                  });
                                                 },
                                               ),
                                             ],
@@ -400,12 +704,16 @@ class CreateView extends StatelessWidget {
                                         Expanded(
                                           child: Row(
                                             children: [
-                                              Text('오수'),
+                                              const Text('오수'),
                                               Radio(
+                                                activeColor:
+                                                    const Color(0xFF0005D0),
                                                 value: '오수처리시설',
-                                                groupValue: typeList,
-                                                onChanged: (value) {
-                                                  type = value as String;
+                                                groupValue: _type,
+                                                onChanged: (String? value) {
+                                                  setState(() {
+                                                    _type = value!;
+                                                  });
                                                 },
                                               ),
                                             ],
@@ -419,14 +727,14 @@ class CreateView extends StatelessWidget {
                                   ? SizedBox(
                                       width: double.infinity,
                                       child: GestureDetector(
-                                        onTap: () => onTapCalendar(),
+                                        onTap: () => widget.onTapCalendar(),
                                         child: Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceEvenly,
                                           children: [
                                             Text(
-                                                '${date.year}년 ${date.month}월 ${date.day}일'),
-                                            Icon(
+                                                '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일'),
+                                            const Icon(
                                               Icons.calendar_month,
                                             ),
                                           ],
@@ -437,16 +745,17 @@ class CreateView extends StatelessWidget {
                                       ? SizedBox(
                                           width: double.infinity,
                                           child: Padding(
-                                            padding: EdgeInsets.symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                                 horizontal: 5.0),
                                             child: DropdownButton<String>(
                                               elevation: 8,
-                                              value: numOfCar,
-                                              underline: SizedBox(),
+                                              value: widget.numOfCar,
+                                              underline: const SizedBox(),
                                               isExpanded: true,
                                               onChanged: (String? value) =>
-                                                  onChangedNumOfCar(value),
-                                              items: numOfCarList.map<
+                                                  widget
+                                                      .onChangedNumOfCar(value),
+                                              items: widget.numOfCarList.map<
                                                       DropdownMenuItem<String>>(
                                                   (String value) {
                                                 return DropdownMenuItem<String>(
@@ -457,7 +766,7 @@ class CreateView extends StatelessWidget {
                                             ),
                                           ),
                                         )
-                                      : SizedBox(),
+                                      : const SizedBox(),
                 ),
               )),
         ],
