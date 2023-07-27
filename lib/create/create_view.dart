@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -78,56 +79,63 @@ class _CreateViewState extends State<CreateView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(
-              height: 50,
-            ),
-            const Text(
-              '분뇨 수집•운반 수수료 확인서',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+      body: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(
+                height: 50,
               ),
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            _buildInputArea('성명(소유자•관리자)', 'text',
-                controller: widget.nameController),
-            _buildInputArea('연락처', 'text',
-                controller: widget.contactController),
-            _buildInputArea('주소(수거장소)', 'address'),
-            _buildInputArea('상세주소', 'text',
-                controller: widget.addressDetailController),
-            _buildInputArea('구분', 'type'),
-            _buildInputArea('수거•확인일', 'calendar'),
-            _buildInputArea('분뇨수거용량(L)', 'text',
-                controller: widget.sizeController),
-            _buildInputArea('수수료 납부금액', 'text',
-                controller: widget.costController),
-            _buildInputArea('차량번호', 'select'),
-            const SizedBox(height: 20),
-            _buildExtraInfo(),
-            _buildSignatureArea(
-                '분뇨수집운반업체', () => widget.onTapSignature('분뇨수집운반업체')),
-            const SizedBox(height: 10),
-            _buildSignatureArea(
-                '개인하수처리시설\n소유자', () => widget.onTapSignature('개인하수처리시설\n소유자')),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buttonWidget('저장', Color(0xFF0005D0), () => onTapSave()),
-                _buttonWidget('임시저장', Color(0xFF0005D0),
-                    () => widget.onTapTempSave(_type)),
-                _buttonWidget('취소', Colors.grey, () => widget.onTapCancel()),
-              ],
-            ),
-          ],
+              const Text(
+                '분뇨 수집•운반 수수료 확인서',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              _buildInputArea('성명(소유자•관리자)', 'text',
+                  controller: widget.nameController),
+              _buildInputArea('연락처', 'text',
+                  controller: widget.contactController),
+              _buildInputArea('주소(수거장소)', 'address'),
+              _buildInputArea('상세주소', 'text',
+                  controller: widget.addressDetailController),
+              _buildInputArea('구분', 'type'),
+              _buildInputArea('수거•확인일', 'calendar'),
+              _buildInputArea('분뇨수거용량(L)', 'text',
+                  controller: widget.sizeController),
+              _buildInputArea('수수료 납부금액', 'text',
+                  controller: widget.costController),
+              _buildInputArea('차량번호', 'select'),
+              const SizedBox(height: 20),
+              _buildExtraInfo(),
+              _buildSignatureArea(
+                  '분뇨수집운반업체', () => widget.onTapSignature('분뇨수집운반업체')),
+              const SizedBox(height: 10),
+              _buildSignatureArea(
+                  '개인하수처리시설\n소유자', () => widget.onTapSignature('개인하수처리시설\n소유자')),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buttonWidget('저장', Color(0xFF0005D0), () => onTapSave()),
+                  _buttonWidget(
+                      '임시저장',
+                      Color(0xFF0005D0),
+                      () => widget.onTapTempSave(
+                            _type,
+                          )),
+                  _buttonWidget('취소', Colors.grey, () => widget.onTapCancel()),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -194,20 +202,84 @@ class _CreateViewState extends State<CreateView> {
 
     final bytes = await pdf.save();
     final dir = Directory('/storage/emulated/0/Documents');
-    Random r = Random();
+    String year = DateTime.now().year.toString();
+    String month = DateTime.now().month < 10
+        ? '0${DateTime.now().month}'
+        : DateTime.now().month.toString();
+    String day = DateTime.now().day < 10
+        ? '0${DateTime.now().day}'
+        : DateTime.now().day.toString();
+    final prefs = await SharedPreferences.getInstance();
 
-    final file = File('${dir.path}/example.pdf');
+    int? todayPdfNum = prefs.getInt('todayPdfNum');
+    String? lastPdfNumDate = prefs.getString('todayPdfNumDate');
+    String fileName = '';
+
+    if (lastPdfNumDate == null) {
+      /// 최초 저장시
+      fileName = '$year$month${day}_1.pdf';
+      prefs.setInt('todayPdfNum', 1);
+      prefs.setString('todayPdfNumDate', '$year$month$day');
+      debugPrint('>>> 최초 저장');
+    } else {
+      /// 마지막 저장일이 오늘인 경우 num만 올려줌
+      if (lastPdfNumDate == '$year$month$day') {
+        fileName = '$year$month${day}_${todayPdfNum! + 1}.pdf';
+        prefs.setInt('todayPdfNum', todayPdfNum + 1);
+        debugPrint('>>> 오늘 ${todayPdfNum + 1}번째 저장');
+      } else if (lastPdfNumDate.compareTo('$year$month$day') < 0) {
+        /// 마지막 저장일이 오늘보다 전인 경우
+        fileName = '$year$month${day}_1.pdf';
+        prefs.setInt('todayPdfNum', 1);
+        prefs.setString('todayPdfNumDate', '$year$month$day');
+        debugPrint('>>> 오늘 최초 저장');
+      }
+    }
+
+    final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes);
-    // file
-    //   ..createSync(recursive: true)
-    //   ..writeAsBytesSync(bytes);
 
     /// 엑셀 만들기
     saveExcel();
 
     /// 임시저장 데이터 삭제
-    final prefs = await SharedPreferences.getInstance();
-    prefs.clear();
+    await prefs.remove('name');
+    await prefs.remove('contact');
+    await prefs.remove('address');
+    await prefs.remove('address_detail');
+    await prefs.remove('type');
+    await prefs.remove('date');
+    await prefs.remove('size');
+    await prefs.remove('cost');
+    await prefs.remove('numOfCar');
+
+    String saveYear = widget.date.year.toString();
+    String saveMonth = widget.date.month < 10 ? '0${widget.date.month}' : widget.date.month.toString();
+    String saveDay = widget.date.day < 10 ? '0${widget.date.day}' : widget.date.day.toString();
+    /// 확인서 목록용 리스트 저장
+    List<String>? savedList = prefs.getStringList('savedList');
+    Map<String, String> savedMap = {
+      'name': widget.nameController.text,
+      'contact': widget.contactController.text.length == 11
+          ? '${widget.contactController.text.substring(0, 3)}-${widget.contactController.text.substring(3, 7)}-${widget.contactController.text.substring(7, 11)}'
+          : widget.contactController.text,
+      'address': widget.address,
+      'address_detail': widget.addressDetailController.text,
+      'date': '$saveYear$saveMonth$saveDay',
+      'size': widget.sizeController.text,
+      'cost': widget.costController.text,
+      'numOfCar': widget.numOfCar,
+    };
+
+    if (savedList == null) {
+      savedList = [];
+      savedList.add(json.encode(savedMap));
+      prefs.setStringList('savedList', savedList);
+    } else {
+      savedList.add(json.encode(savedMap));
+      prefs.setStringList('savedList', savedList);
+    }
+
     Fluttertoast.showToast(msg: '저장 되었습니다.');
     Get.back();
   }

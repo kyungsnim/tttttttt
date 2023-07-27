@@ -11,7 +11,23 @@ import 'package:signature/signature.dart';
 import 'package:tttttttt/importer.dart';
 
 class CreatePresenter extends StatefulWidget {
-  const CreatePresenter({super.key});
+  String? name;
+  String? contact;
+  String? address;
+  String? addressDetail;
+  String? date;
+  String? size;
+  String? cost;
+
+  CreatePresenter({
+    this.name,
+    this.contact,
+    this.address,
+    this.addressDetail,
+    this.date,
+    this.size,
+    this.cost,
+    super.key});
 
   @override
   State<CreatePresenter> createState() => _CreatePresenterState();
@@ -110,15 +126,25 @@ class _CreatePresenterState extends State<CreatePresenter> {
   void _initTempData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    _nameController.text = prefs.getString('name') ?? '';
-    _contactController.text = prefs.getString('contact') ?? '';
-    _address = prefs.getString('address') ?? '';
-    _addressDetailController.text = prefs.getString('address_detail') ?? '';
-    // prefs.getString('type');
-    _date = DateTime.parse(prefs.getString('date') ?? DateTime.now().toString());
-    _sizeController.text = prefs.getString('size') ?? '';
-    _costController.text = prefs.getString('cost') ?? '';
-    _numOfCar = prefs.getString('numOfCar') ?? '91루0799';
+    setState(() {
+      _nameController.text = prefs.getString('name') ?? '';
+      _contactController.text = prefs.getString('contact') ?? '';
+      _address = prefs.getString('address') ?? '';
+      _addressDetailController.text = prefs.getString('address_detail') ?? '';
+      _date = DateTime.parse(prefs.getString('date') ?? DateTime.now().toString());
+      _sizeController.text = prefs.getString('size') ?? '';
+      _costController.text = prefs.getString('cost') ?? '';
+      _numOfCar = prefs.getString('numOfCar') ?? '91루0799';
+
+      /// 메인화면 확인서 목록에서 넘어온 경우 초기값 셋팅해주기
+      _nameController.text = widget.name ?? '';
+      _contactController.text = widget.contact ?? '';
+      _address = widget.address ?? '';
+      _addressDetailController.text = widget.addressDetail ?? '';
+      _date = DateTime.parse(widget.date ?? DateTime.now().toString());
+      _sizeController.text = widget.size ?? '';
+      _costController.text = widget.cost ?? '';
+    });
   }
 
   @override
@@ -159,6 +185,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
     await prefs.setString('address', _address);
     await prefs.setString('address_detail', _addressDetailController.text);
     await prefs.setString('type', type);
+    print('>>> 저장된 type: $type');
     await prefs.setString('date', _date.toString());
     await prefs.setString('size', _sizeController.text);
     await prefs.setString('cost', _costController.text);
