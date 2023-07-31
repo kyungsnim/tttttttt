@@ -18,6 +18,7 @@ class CreatePresenter extends StatefulWidget {
   String? date;
   String? size;
   String? cost;
+  bool? viewMode;
 
   CreatePresenter({
     this.name,
@@ -27,6 +28,7 @@ class CreatePresenter extends StatefulWidget {
     this.date,
     this.size,
     this.cost,
+    this.viewMode,
     super.key});
 
   @override
@@ -126,6 +128,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
   void _initTempData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
+    /// 임시저장된 데이터 있다면 불러오기
     setState(() {
       _nameController.text = prefs.getString('name') ?? '';
       _contactController.text = prefs.getString('contact') ?? '';
@@ -166,6 +169,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
       costController: _costController,
       png1Bytes: _png1Bytes ?? Uint8List(1),
       png2Bytes: _png2Bytes ?? Uint8List(1),
+      viewMode: widget.viewMode ?? false,
       // onTapSave: () => _onTapSave(),
       onTapTempSave: (type) => _onTapTempSave(type),
       onTapCancel: () => _onTapCancel(),

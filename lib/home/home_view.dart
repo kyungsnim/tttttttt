@@ -63,10 +63,10 @@ class _HomeViewState extends State<HomeView> {
                   _savedList = prefs.getStringList('savedList');
                   _savedList ??= [];
                 });
-              },//widget.onTapCreate(),
+              }, //widget.onTapCreate(),
               style: ButtonStyle(
                   backgroundColor:
-                      MaterialStateProperty.all<Color>(Color(0xFF0005D0))),
+                      MaterialStateProperty.all<Color>(const Color(0xFF0005D0))),
               child: const Text(
                 '신규 확인서 작성',
                 style: TextStyle(color: Colors.white),
@@ -83,9 +83,9 @@ class _HomeViewState extends State<HomeView> {
                   : Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Container(
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(4),
                             color: Colors.grey.shade200,
@@ -98,50 +98,71 @@ class _HomeViewState extends State<HomeView> {
                               _buildSavedListTitle('소유자', 2),
                               _buildSavedListTitle('수거장소', 3),
                               _buildSavedListTitle('용량', 1),
-                              _buildSavedListTitle('비용', 1),
+                              _buildSavedListTitle('비용', 2),
                             ],
                           ),
                         ),
-                        Flexible(
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            reverse: true,
-                            itemCount: _savedList!.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              Map<String, dynamic> data =
-                                  json.decode(_savedList![index]);
-                              return GestureDetector(
-                                onTap: () => Get.to(() => CreatePresenter(
-                                  name: '${data['name']}',
-                                  contact: '${data['contact']}',
-                                  address: '${data['address']}',
-                                  addressDetail: '${data['address_detail']}',
-                                  date: '${data['date'].substring(0, 4)}-${data['date'].substring(4, 6)}-${data['date'].substring(6, 8)}',
-                                  size: '${data['size']}',
-                                  cost: '${data['cost']}',
-                                )),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4),
-                                    color: const Color(0x0005D0).withOpacity(0.05),
-                                  ),
-                                  child: Row(
-                                    // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _buildSavedListDescription('${index + 1}', 1),
-                                      _buildSavedListDescription('${data['date']}', 2),
-                                      _buildSavedListDescription('${data['name']}', 2),
-                                      _buildSavedListDescription('${data['address']}'
-                                          .replaceAll('강원도 영월군', ''), 3),
-                                      _buildSavedListDescription('${data['size']}', 1),
-                                      _buildSavedListDescription('${data['cost']}', 1),
-                                    ],
-                                  ),
+                        SizedBox(
+                          height: Get.height * 0.6,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Expanded(
+                                child: ListView.builder(
+                                  // physics: const NeverScrollableScrollPhysics(),
+                                  padding: EdgeInsets.zero,
+                                  shrinkWrap: true,
+                                  reverse: true,
+                                  itemCount: _savedList!.length,
+                                  itemBuilder: (BuildContext context, int index) {
+                                    Map<String, dynamic> data =
+                                        json.decode(_savedList![index]);
+                                    return GestureDetector(
+                                      onTap: () => Get.to(() => CreatePresenter(
+                                            name: '${data['name']}',
+                                            contact: '${data['contact']}',
+                                            address: '${data['address']}',
+                                            addressDetail:
+                                                '${data['address_detail']}',
+                                            date:
+                                                '${data['date'].substring(0, 4)}-${data['date'].substring(4, 6)}-${data['date'].substring(6, 8)}',
+                                            size: '${data['size']}',
+                                            cost: '${data['cost']}',
+                                            viewMode: true,
+                                          )),
+                                      child: Container(
+                                        padding:
+                                            const EdgeInsets.symmetric(vertical: 12),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(4),
+                                          color:
+                                              const Color(0x000005d0).withOpacity(0.05),
+                                        ),
+                                        child: Row(
+                                          // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            _buildSavedListDescription(
+                                                '${index + 1}', 1),
+                                            _buildSavedListDescription(
+                                                '${data['date']}', 2),
+                                            _buildSavedListDescription(
+                                                '${data['name']}', 2),
+                                            _buildSavedListDescription(
+                                                '${data['address']}'
+                                                    .replaceAll('강원도 영월군', ''),
+                                                3),
+                                            _buildSavedListDescription(
+                                                '${data['size']}', 1),
+                                            _buildSavedListDescription(
+                                                '${data['cost']}', 2),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -163,19 +184,19 @@ class _HomeViewState extends State<HomeView> {
         flex: flex,
         child: Container(
             alignment: Alignment.center,
-            child: Text(title,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),)));
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            )));
   }
 
   Widget _buildSavedListDescription(String title, int flex) {
     return Expanded(
         flex: flex,
-        child: Container(
-            alignment: Alignment.center,
-            child: Text(title)));
+        child: Container(alignment: Alignment.center, child: Text(title)));
   }
 }

@@ -26,6 +26,7 @@ class CreateView extends StatefulWidget {
   final numOfCarList;
   Uint8List png1Bytes;
   Uint8List png2Bytes;
+  bool? viewMode;
   TextEditingController nameController;
   TextEditingController contactController;
   TextEditingController addressDetailController;
@@ -58,6 +59,7 @@ class CreateView extends StatefulWidget {
       required this.addressDetailController,
       required this.sizeController,
       required this.costController,
+      this.viewMode,
       // required this.onTapSave,
       required this.onTapTempSave,
       required this.onTapCancel,
@@ -118,27 +120,71 @@ class _CreateViewState extends State<CreateView> {
               _buildSignatureArea(
                   '분뇨수집운반업체', () => widget.onTapSignature('분뇨수집운반업체')),
               const SizedBox(height: 10),
-              _buildSignatureArea(
-                  '개인하수처리시설\n소유자', () => widget.onTapSignature('개인하수처리시설\n소유자')),
+              _buildSignatureArea('개인하수처리시설\n소유자',
+                  () => widget.onTapSignature('개인하수처리시설\n소유자')),
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buttonWidget('저장', Color(0xFF0005D0), () => onTapSave()),
-                  _buttonWidget(
-                      '임시저장',
-                      Color(0xFF0005D0),
-                      () => widget.onTapTempSave(
-                            _type,
-                          )),
-                  _buttonWidget('취소', Colors.grey, () => widget.onTapCancel()),
-                ],
-              ),
+              widget.viewMode!
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buttonWidget(
+                            '목록', Colors.grey, () => widget.onTapCancel()),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buttonWidget(
+                            '저장', Color(0xFF0005D0), () => onTapSavePopup()),
+                        _buttonWidget(
+                            '임시저장',
+                            Color(0xFF0005D0),
+                            () => widget.onTapTempSave(
+                                  _type,
+                                )),
+                        _buttonWidget(
+                            '취소', Colors.grey, () => widget.onTapCancel()),
+                      ],
+                    ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void onTapSavePopup() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('저장하기'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '저장한 이후에는 수정이 불가합니다.\n저장하시겠습니까?',
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buttonWidget('저장', Color(0xFF0005D0), () {
+                      onTapSave();
+                      Get.back();
+                    }),
+                    const SizedBox(width: 20),
+                    _buttonWidget(
+                        '취소', Colors.grey, () => widget.onTapCancel()),
+                  ],
+                )
+              ],
+            ),
+          );
+        });
   }
 
   void onTapSave() async {
@@ -254,8 +300,13 @@ class _CreateViewState extends State<CreateView> {
     await prefs.remove('numOfCar');
 
     String saveYear = widget.date.year.toString();
-    String saveMonth = widget.date.month < 10 ? '0${widget.date.month}' : widget.date.month.toString();
-    String saveDay = widget.date.day < 10 ? '0${widget.date.day}' : widget.date.day.toString();
+    String saveMonth = widget.date.month < 10
+        ? '0${widget.date.month}'
+        : widget.date.month.toString();
+    String saveDay = widget.date.day < 10
+        ? '0${widget.date.day}'
+        : widget.date.day.toString();
+
     /// 확인서 목록용 리스트 저장
     List<String>? savedList = prefs.getStringList('savedList');
     Map<String, String> savedMap = {
@@ -279,7 +330,7 @@ class _CreateViewState extends State<CreateView> {
       savedList.add(json.encode(savedMap));
       prefs.setStringList('savedList', savedList);
     }
-
+    setState(() {});
     Fluttertoast.showToast(msg: '저장 되었습니다.');
     Get.back();
   }
@@ -544,7 +595,11 @@ class _CreateViewState extends State<CreateView> {
 
   Widget _buildSignatureArea(String title, Function onTap) {
     return GestureDetector(
-      onTap: () => onTap(), //onTap(),
+      onTap: () {
+        if (!widget.viewMode!) {
+          onTap();
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28.0),
         child: Row(
@@ -686,30 +741,91 @@ class _CreateViewState extends State<CreateView> {
                 child: SizedBox(
                   height: 30,
                   child: type == 'text'
-                      ? TextField(
-                          autofocus: true,
-                          textInputAction: TextInputAction.next,
-                          // focusNode: FocusNode(),
-                          onSubmitted: (value) {
-                            FocusNode().nextFocus();
-                          },
-                          controller: controller!,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 5,
-                            ),
-                          ),
-                          cursorColor: Colors.black,
-                          style: const TextStyle(
-                            fontSize: 14,
-                          ),
-                        )
+                      ? title == '분뇨수거용량(L)' || title == '수수료 납부금액'
+                          ? TextField(
+                              readOnly: widget.viewMode!,
+                              autofocus: true,
+                              textInputAction: TextInputAction.next,
+                              // focusNode: FocusNode(),
+                              onSubmitted: (value) {
+                                FocusNode().nextFocus();
+                              },
+                              controller: controller!,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 5,
+                                ),
+                              ),
+                              cursorColor: Colors.black,
+                              style: const TextStyle(
+                                fontSize: 14,
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                /// 연락처 입력일 때는 숫자와 하이픈만 사용 가능
+                                FilteringTextInputFormatter.allow(
+                                    RegExp("[0-9]")),
+                              ],
+                            )
+                          : title == '연락처'
+                              ? TextField(
+                                  readOnly: widget.viewMode!,
+                                  autofocus: true,
+                                  textInputAction: TextInputAction.next,
+                                  // focusNode: FocusNode(),
+                                  onSubmitted: (value) {
+                                    FocusNode().nextFocus();
+                                  },
+                                  controller: controller!,
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      vertical: 14,
+                                      horizontal: 5,
+                                    ),
+                                  ),
+                                  cursorColor: Colors.black,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          signed: true),
+                                  inputFormatters: [
+                                    /// 연락처 입력일 때는 숫자와 하이픈만 사용 가능
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp("[0-9.-]")),
+                                  ],
+                                )
+                              : TextField(
+                                  readOnly: widget.viewMode!,
+                                  autofocus: true,
+                                  textInputAction: TextInputAction.next,
+                                  // focusNode: FocusNode(),
+                                  onSubmitted: (value) {
+                                    FocusNode().nextFocus();
+                                  },
+                                  controller: controller!,
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      vertical: 14,
+                                      horizontal: 5,
+                                    ),
+                                  ),
+                                  cursorColor: Colors.black,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                  ),
+                                )
                       : type == 'address'
                           ? GestureDetector(
                               onTap: () {
-                                widget.onTapSearchAddress();
+                                if (!widget.viewMode!) {
+                                  widget.onTapSearchAddress();
+                                }
                               },
                               child: Container(
                                 alignment: Alignment.centerLeft,
@@ -747,9 +863,11 @@ class _CreateViewState extends State<CreateView> {
                                                 value: '분뇨',
                                                 groupValue: _type,
                                                 onChanged: (value) {
-                                                  setState(() {
-                                                    _type = value!;
-                                                  });
+                                                  if (!widget.viewMode!) {
+                                                    setState(() {
+                                                      _type = value!;
+                                                    });
+                                                  }
                                                 },
                                               ),
                                             ],
@@ -765,9 +883,11 @@ class _CreateViewState extends State<CreateView> {
                                                 value: '정화조',
                                                 groupValue: _type,
                                                 onChanged: (value) {
-                                                  setState(() {
-                                                    _type = value!;
-                                                  });
+                                                  if (!widget.viewMode!) {
+                                                    setState(() {
+                                                      _type = value!;
+                                                    });
+                                                  }
                                                 },
                                               ),
                                             ],
@@ -783,9 +903,11 @@ class _CreateViewState extends State<CreateView> {
                                                 value: '오수처리시설',
                                                 groupValue: _type,
                                                 onChanged: (String? value) {
-                                                  setState(() {
-                                                    _type = value!;
-                                                  });
+                                                  if (!widget.viewMode!) {
+                                                    setState(() {
+                                                      _type = value!;
+                                                    });
+                                                  }
                                                 },
                                               ),
                                             ],
@@ -799,7 +921,11 @@ class _CreateViewState extends State<CreateView> {
                                   ? SizedBox(
                                       width: double.infinity,
                                       child: GestureDetector(
-                                        onTap: () => widget.onTapCalendar(),
+                                        onTap: () {
+                                          if (!widget.viewMode!) {
+                                            widget.onTapCalendar();
+                                          }
+                                        },
                                         child: Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceEvenly,
@@ -814,30 +940,56 @@ class _CreateViewState extends State<CreateView> {
                                       ),
                                     )
                                   : type == 'select'
-                                      ? SizedBox(
-                                          width: double.infinity,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 5.0),
-                                            child: DropdownButton<String>(
-                                              elevation: 8,
-                                              value: widget.numOfCar,
-                                              underline: const SizedBox(),
-                                              isExpanded: true,
-                                              onChanged: (String? value) =>
-                                                  widget
-                                                      .onChangedNumOfCar(value),
-                                              items: widget.numOfCarList.map<
-                                                      DropdownMenuItem<String>>(
-                                                  (String value) {
-                                                return DropdownMenuItem<String>(
-                                                  value: value,
-                                                  child: Text(value),
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ),
-                                        )
+                                      ? widget.viewMode!
+                                          ? Container(
+                                              alignment: Alignment.centerLeft,
+                                              width: double.infinity,
+                                              color: Colors.yellowAccent
+                                                  .withOpacity(0),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 5,
+                                                        vertical: 0),
+                                                child: Text(
+                                                  widget.numOfCar,
+                                                  style: const TextStyle(
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : SizedBox(
+                                              width: double.infinity,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 5.0),
+                                                child: DropdownButton<String>(
+                                                  elevation: 8,
+                                                  value: widget.numOfCar,
+                                                  underline: const SizedBox(),
+                                                  isExpanded: true,
+                                                  onChanged: (String? value) {
+                                                    if (!widget.viewMode!) {
+                                                      widget.onChangedNumOfCar(
+                                                          value);
+                                                    }
+                                                  },
+                                                  items: widget.numOfCarList
+                                                      .map<
+                                                              DropdownMenuItem<
+                                                                  String>>(
+                                                          (String value) {
+                                                    return DropdownMenuItem<
+                                                        String>(
+                                                      value: value,
+                                                      child: Text(value),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                            )
                                       : const SizedBox(),
                 ),
               )),

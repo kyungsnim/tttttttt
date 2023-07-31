@@ -18,7 +18,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return const GetMaterialApp(
-      title: '탄소지도 지역 전산화',
+      title: '영월군 분뇨수집 운반 수수료 확인서',
       debugShowCheckedModeBanner: false,
       home: HomePresenter(),
     );

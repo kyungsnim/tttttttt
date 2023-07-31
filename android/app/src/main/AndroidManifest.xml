@@ -6,7 +6,7 @@
     <application
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:label="탄소지도\n지역 전산화"
+        android:label="영월군 분뇨수집\n운반 수수료 확인서"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
         <activity
