@@ -189,14 +189,13 @@ class _CreatePresenterState extends State<CreatePresenter> {
     await prefs.setString('address', _address);
     await prefs.setString('address_detail', _addressDetailController.text);
     await prefs.setString('type', type);
-    print('>>> 저장된 type: $type');
     await prefs.setString('date', _date.toString());
     await prefs.setString('size', _sizeController.text);
     await prefs.setString('cost', _costController.text);
     await prefs.setString('numOfCar', _numOfCar);
 
     Fluttertoast.showToast(msg: '임시저장 되었습니다.');
-    // print(prefs.getString('name'));
+    Get.back();
   }
 
   void _onTapCancel() {
