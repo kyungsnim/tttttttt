@@ -1,8 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kpostal/kpostal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tttttttt/create/create_presenter.dart';
 
@@ -119,7 +119,7 @@ class _HomeViewState extends State<HomeView> {
                             child: Row(
                               // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                _buildSavedListTitle('번호', 1),
+                                _buildSavedListTitle('구분', 1),
                                 _buildSavedListTitle('날짜', 2),
                                 _buildSavedListTitle('소유자', 2),
                                 _buildSavedListTitle('수거장소', 3),
@@ -135,37 +135,49 @@ class _HomeViewState extends State<HomeView> {
                               shrinkWrap: true,
                               reverse: true,
                               itemCount: _savedList!.length,
-                              itemBuilder:
-                                  (BuildContext context, int index) {
+                              itemBuilder: (BuildContext context, int index) {
                                 Map<String, dynamic> data =
                                     json.decode(_savedList![index]);
                                 return GestureDetector(
-                                  onTap: () => Get.to(() => CreatePresenter(
-                                        name: '${data['name']}',
-                                        contact: '${data['contact']}',
-                                        address: '${data['address']}',
-                                        addressDetail:
-                                            '${data['address_detail']}',
-                                        date:
-                                            '${data['date'].substring(0, 4)}-${data['date'].substring(4, 6)}-${data['date'].substring(6, 8)}',
-                                        size: '${data['size']}',
-                                        cost: '${data['cost']}',
-                                        viewMode: true,
-                                      )),
+                                  onTap: () => Get.to(
+                                    () => CreatePresenter(
+                                      id: '${data['id'] ?? ''}',
+                                      name: '${data['name']}',
+                                      contact: '${data['contact']}',
+                                      address: '${data['address']}',
+                                      addressDetail:
+                                          '${data['address_detail']}',
+                                      date:
+                                          '${data['date'].substring(0, 4)}-${data['date'].substring(4, 6)}-${data['date'].substring(6, 8)}',
+                                      size: '${data['size']}',
+                                      cost: '${data['cost']}',
+                                      viewMode: data['saveType'] == 'save'
+                                          ? true
+                                          : false,
+                                      numOfCar: '${data['numOfCar']}',
+                                      png1Bytes: data['sign1'] != null ? Uint8List.fromList(
+                                          data['sign1'].codeUnits) : Uint8List(1),
+                                      png2Bytes: data['sign2'] != null ? Uint8List.fromList(
+                                          data['sign2'].codeUnits) : Uint8List(1),
+                                    ),
+                                  ),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12),
                                     decoration: BoxDecoration(
-                                      borderRadius:
-                                          BorderRadius.circular(4),
-                                      color: const Color(0x000005d0)
-                                          .withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: data['saveType'] == 'save'
+                                          ? const Color(0x000005d0)
+                                              .withOpacity(0.05)
+                                          : Colors.redAccent.withOpacity(0.05),
                                     ),
                                     child: Row(
-                                      // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                       children: [
                                         _buildSavedListDescription(
-                                            '${index + 1}', 1),
+                                            data['saveType'] == 'save'
+                                                ? '저장'
+                                                : '임시',
+                                            1),
                                         _buildSavedListDescription(
                                             '${data['date']}', 2),
                                         _buildSavedListDescription(
@@ -187,13 +199,6 @@ class _HomeViewState extends State<HomeView> {
                           ),
                         ],
                       ),
-            // TextButton(
-            //   child: Text('삭제 테스트'),
-            //   onPressed: () async {
-            //     final prefs = await SharedPreferences.getInstance();
-            //     prefs.remove('savedList');
-            //   },
-            // )
           ],
         ),
       ),

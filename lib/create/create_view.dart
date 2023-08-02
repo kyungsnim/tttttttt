@@ -1,20 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:excel/excel.dart' as e;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateView extends StatefulWidget {
+  String id;
   String name;
   String contact;
   String address;
@@ -43,7 +40,9 @@ class CreateView extends StatefulWidget {
   Function onTapSignature;
 
   CreateView(
-      {required this.name,
+      {
+        required this.id,
+        required this.name,
       required this.contact,
       required this.address,
       required this.addressDetail,
@@ -248,13 +247,13 @@ class _CreateViewState extends State<CreateView> {
 
     final bytes = await pdf.save();
     final dir = Directory('/storage/emulated/0/Documents');
-    String year = DateTime.now().year.toString();
-    String month = DateTime.now().month < 10
-        ? '0${DateTime.now().month}'
-        : DateTime.now().month.toString();
-    String day = DateTime.now().day < 10
-        ? '0${DateTime.now().day}'
-        : DateTime.now().day.toString();
+    String year = widget.date.year.toString();
+    String month = widget.date.month < 10
+        ? '0${widget.date.month}'
+        : widget.date.month.toString();
+    String day = widget.date.day < 10
+        ? '0${widget.date.day}'
+        : widget.date.day.toString();
     final prefs = await SharedPreferences.getInstance();
 
     int? todayPdfNum = prefs.getInt('todayPdfNum');
@@ -288,17 +287,6 @@ class _CreateViewState extends State<CreateView> {
     /// 엑셀 만들기
     saveExcel();
 
-    /// 임시저장 데이터 삭제
-    await prefs.remove('name');
-    await prefs.remove('contact');
-    await prefs.remove('address');
-    await prefs.remove('address_detail');
-    await prefs.remove('type');
-    await prefs.remove('date');
-    await prefs.remove('size');
-    await prefs.remove('cost');
-    await prefs.remove('numOfCar');
-
     String saveYear = widget.date.year.toString();
     String saveMonth = widget.date.month < 10
         ? '0${widget.date.month}'
@@ -307,9 +295,15 @@ class _CreateViewState extends State<CreateView> {
         ? '0${widget.date.day}'
         : widget.date.day.toString();
 
+    String sign1 = String.fromCharCodes(widget.png1Bytes);
+    String sign2 = String.fromCharCodes(widget.png2Bytes);
+
+    // var outputAsUint8List = new Uint8List.fromList(s.codeUnits);
+
     /// 확인서 목록용 리스트 저장
     List<String>? savedList = prefs.getStringList('savedList');
     Map<String, String> savedMap = {
+      'id': DateTime.now().microsecondsSinceEpoch.toString(),
       'name': widget.nameController.text,
       'contact': widget.contactController.text.length == 11
           ? '${widget.contactController.text.substring(0, 3)}-${widget.contactController.text.substring(3, 7)}-${widget.contactController.text.substring(7, 11)}'
@@ -320,6 +314,9 @@ class _CreateViewState extends State<CreateView> {
       'size': widget.sizeController.text,
       'cost': widget.costController.text,
       'numOfCar': widget.numOfCar,
+      'saveType': 'save',
+      'sign1': sign1,
+      'sign2': sign2,
     };
 
     if (savedList == null) {
@@ -327,6 +324,15 @@ class _CreateViewState extends State<CreateView> {
       savedList.add(json.encode(savedMap));
       prefs.setStringList('savedList', savedList);
     } else {
+
+      if (widget.id.isNotEmpty) {
+        for (int i = 0; i < savedList.length; i++) {
+          if (savedList[i].contains(widget.id)) {
+            savedList.removeAt(i);
+          }
+        }
+      }
+
       savedList.add(json.encode(savedMap));
       prefs.setStringList('savedList', savedList);
     }
@@ -338,10 +344,10 @@ class _CreateViewState extends State<CreateView> {
   void saveExcel() async {
     final dir = Directory('/storage/emulated/0/Documents');
 
-    String year = DateTime.now().year.toString();
-    String month = DateTime.now().month < 10
-        ? '0${DateTime.now().month}'
-        : DateTime.now().month.toString();
+    String year = widget.date.year.toString();
+    String month = widget.date.month < 10
+        ? '0${widget.date.month}'
+        : widget.date.month.toString();
     File file = File('${dir.path}/$year$month.xlsx');
 
     /// 추가할 행 정리

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -5,12 +6,12 @@ import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:kpostal/kpostal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signature/signature.dart';
 import 'package:tttttttt/importer.dart';
 
 class CreatePresenter extends StatefulWidget {
+  String? id;
   String? name;
   String? contact;
   String? address;
@@ -19,8 +20,12 @@ class CreatePresenter extends StatefulWidget {
   String? size;
   String? cost;
   bool? viewMode;
+  String? numOfCar;
+  Uint8List? png1Bytes;
+  Uint8List? png2Bytes;
 
   CreatePresenter({
+    this.id,
     this.name,
     this.contact,
     this.address,
@@ -29,6 +34,9 @@ class CreatePresenter extends StatefulWidget {
     this.size,
     this.cost,
     this.viewMode,
+    this.numOfCar,
+    this.png1Bytes,
+    this.png2Bytes,
     super.key});
 
   @override
@@ -36,6 +44,7 @@ class CreatePresenter extends StatefulWidget {
 }
 
 class _CreatePresenterState extends State<CreatePresenter> {
+  String _id = '';
   String _name = '';
   String _contact = '';
   String _address = '';
@@ -126,20 +135,9 @@ class _CreatePresenterState extends State<CreatePresenter> {
 
   /// 임시저장 데이터 있는 경우 불러오기
   void _initTempData() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    /// 임시저장된 데이터 있다면 불러오기
     setState(() {
-      _nameController.text = prefs.getString('name') ?? '';
-      _contactController.text = prefs.getString('contact') ?? '';
-      _address = prefs.getString('address') ?? '';
-      _addressDetailController.text = prefs.getString('address_detail') ?? '';
-      _date = DateTime.parse(prefs.getString('date') ?? DateTime.now().toString());
-      _sizeController.text = prefs.getString('size') ?? '';
-      _costController.text = prefs.getString('cost') ?? '';
-      _numOfCar = prefs.getString('numOfCar') ?? '91루0799';
-
       /// 메인화면 확인서 목록에서 넘어온 경우 초기값 셋팅해주기
+      _id = widget.id ?? '';
       _nameController.text = widget.name ?? '';
       _contactController.text = widget.contact ?? '';
       _address = widget.address ?? '';
@@ -147,12 +145,16 @@ class _CreatePresenterState extends State<CreatePresenter> {
       _date = DateTime.parse(widget.date ?? DateTime.now().toString());
       _sizeController.text = widget.size ?? '';
       _costController.text = widget.cost ?? '';
+      _numOfCar = widget.numOfCar ?? '91루0799';
+      _png1Bytes = widget.png1Bytes ?? Uint8List(1);
+      _png2Bytes = widget.png2Bytes ?? Uint8List(1);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return CreateView(
+      id: _id,
       name: _name,
       contact: _contact,
       address: _address,
@@ -184,15 +186,51 @@ class _CreatePresenterState extends State<CreatePresenter> {
   void _onTapTempSave(String type) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    await prefs.setString('name', _nameController.text);
-    await prefs.setString('contact', _contactController.text);
-    await prefs.setString('address', _address);
-    await prefs.setString('address_detail', _addressDetailController.text);
-    await prefs.setString('type', type);
-    await prefs.setString('date', _date.toString());
-    await prefs.setString('size', _sizeController.text);
-    await prefs.setString('cost', _costController.text);
-    await prefs.setString('numOfCar', _numOfCar);
+    String saveYear = _date!.year.toString();
+    String saveMonth = _date!.month < 10
+        ? '0${_date!.month}'
+        : _date!.month.toString();
+    String saveDay = _date!.day < 10
+        ? '0${_date!.day}'
+        : _date!.day.toString();
+
+    /// 확인서 목록용 리스트 저장
+    List<String>? savedList = prefs.getStringList('savedList');
+    Map<String, String> savedMap = {
+      'id': DateTime.now().microsecondsSinceEpoch.toString(),
+      'name': _nameController.text,
+      'contact': _contactController.text.length == 11
+          ? '${_contactController.text.substring(0, 3)}-${_contactController.text.substring(3, 7)}-${_contactController.text.substring(7, 11)}'
+          : _contactController.text,
+      'address': _address,
+      'address_detail': _addressDetailController.text,
+      'date': '$saveYear$saveMonth$saveDay',
+      'size': _sizeController.text,
+      'cost': _costController.text,
+      'numOfCar': _numOfCar,
+      'saveType': 'tmp',
+      'sign1': String.fromCharCodes(_png1Bytes ?? Uint8List(1)),
+      'sign2': String.fromCharCodes(_png2Bytes ?? Uint8List(1)),
+    };
+
+    if (savedList == null) {
+      savedList = [];
+      savedList.add(json.encode(savedMap));
+      prefs.setStringList('savedList', savedList);
+    } else {
+
+      /// 기존에 임시저장했던 데이터가 있다면 그건 삭제처리
+      if (_id.isNotEmpty) {
+        for (int i = 0; i < savedList.length; i++) {
+          if (savedList[i].contains(_id)) {
+            savedList.removeAt(i);
+          }
+        }
+      }
+
+      savedList.add(json.encode(savedMap));
+      prefs.setStringList('savedList', savedList);
+    }
 
     Fluttertoast.showToast(msg: '임시저장 되었습니다.');
     Get.back();
@@ -271,10 +309,11 @@ class _CreatePresenterState extends State<CreatePresenter> {
                   Get.back();
                   FocusManager.instance.primaryFocus?.unfocus();
                 },
-                validator: (value) {
+                validator: (String? value) {
                   if (value!.isEmpty) {
                     return '주소를 입력해주세요.';
                   }
+                  return null;
                 },
                 onSaved: (value) {},
               ),
