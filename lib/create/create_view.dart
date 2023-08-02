@@ -40,9 +40,8 @@ class CreateView extends StatefulWidget {
   Function onTapSignature;
 
   CreateView(
-      {
-        required this.id,
-        required this.name,
+      {required this.id,
+      required this.name,
       required this.contact,
       required this.address,
       required this.addressDetail,
@@ -76,6 +75,8 @@ class CreateView extends StatefulWidget {
 class _CreateViewState extends State<CreateView> {
   late pw.Document pdf;
   String _type = '분뇨';
+
+  String errorMessage = '';
 
   @override
   Widget build(BuildContext context) {
@@ -247,6 +248,9 @@ class _CreateViewState extends State<CreateView> {
 
     final bytes = await pdf.save();
     final dir = Directory('/storage/emulated/0/Documents');
+    String fileName = '';
+    final prefs = await SharedPreferences.getInstance();
+
     String year = widget.date.year.toString();
     String month = widget.date.month < 10
         ? '0${widget.date.month}'
@@ -254,31 +258,17 @@ class _CreateViewState extends State<CreateView> {
     String day = widget.date.day < 10
         ? '0${widget.date.day}'
         : widget.date.day.toString();
-    final prefs = await SharedPreferences.getInstance();
 
-    int? todayPdfNum = prefs.getInt('todayPdfNum');
-    String? lastPdfNumDate = prefs.getString('todayPdfNumDate');
-    String fileName = '';
+    /// 수거일자 저장번호 불러오기
+    int? lastPdfNum = prefs.getInt('$year$month$day');
 
-    if (lastPdfNumDate == null) {
-      /// 최초 저장시
+    if (lastPdfNum == null) {
+      /// 해당 수거일자 데이터가 없는 경우
       fileName = '$year$month${day}_1.pdf';
-      prefs.setInt('todayPdfNum', 1);
-      prefs.setString('todayPdfNumDate', '$year$month$day');
-      debugPrint('>>> 최초 저장');
+      prefs.setInt('$year$month$day', 1);
     } else {
-      /// 마지막 저장일이 오늘인 경우 num만 올려줌
-      if (lastPdfNumDate == '$year$month$day') {
-        fileName = '$year$month${day}_${todayPdfNum! + 1}.pdf';
-        prefs.setInt('todayPdfNum', todayPdfNum + 1);
-        debugPrint('>>> 오늘 ${todayPdfNum + 1}번째 저장');
-      } else if (lastPdfNumDate.compareTo('$year$month$day') < 0) {
-        /// 마지막 저장일이 오늘보다 전인 경우
-        fileName = '$year$month${day}_1.pdf';
-        prefs.setInt('todayPdfNum', 1);
-        prefs.setString('todayPdfNumDate', '$year$month$day');
-        debugPrint('>>> 오늘 최초 저장');
-      }
+      fileName = '$year$month${day}_${lastPdfNum + 1}.pdf';
+      prefs.setInt('$year$month$day', 1);
     }
 
     final file = File('${dir.path}/$fileName');
@@ -298,11 +288,12 @@ class _CreateViewState extends State<CreateView> {
     String sign1 = String.fromCharCodes(widget.png1Bytes);
     String sign2 = String.fromCharCodes(widget.png2Bytes);
 
-    // var outputAsUint8List = new Uint8List.fromList(s.codeUnits);
+    List<String>? savedList = [];
+    Map<String, String> savedMap = {};
 
     /// 확인서 목록용 리스트 저장
-    List<String>? savedList = prefs.getStringList('savedList');
-    Map<String, String> savedMap = {
+    savedList = prefs.getStringList('savedList');
+    savedMap = {
       'id': DateTime.now().microsecondsSinceEpoch.toString(),
       'name': widget.nameController.text,
       'contact': widget.contactController.text.length == 11
@@ -319,26 +310,34 @@ class _CreateViewState extends State<CreateView> {
       'sign2': sign2,
     };
 
-    if (savedList == null) {
+    if (savedList == null || savedList.isEmpty) {
       savedList = [];
       savedList.add(json.encode(savedMap));
       prefs.setStringList('savedList', savedList);
     } else {
-
-      if (widget.id.isNotEmpty) {
-        for (int i = 0; i < savedList.length; i++) {
-          if (savedList[i].contains(widget.id)) {
-            savedList.removeAt(i);
+      try {
+        if (widget.id.isNotEmpty) {
+          for (int i = 0; i < savedList.length; i++) {
+            if (savedList[i].contains(widget.id)) {
+              savedList.removeAt(i);
+            }
           }
         }
+        savedList.add(json.encode(savedMap));
+        prefs.setStringList('savedList', savedList);
+      } catch (r) {
+        setState(() {
+          errorMessage += 'saveList3!!! >>> $r\n';
+        });
       }
-
-      savedList.add(json.encode(savedMap));
-      prefs.setStringList('savedList', savedList);
     }
+
     setState(() {});
-    Fluttertoast.showToast(msg: '저장 되었습니다.');
-    Get.back();
+
+    if (errorMessage.isEmpty) {
+      Fluttertoast.showToast(msg: '저장 되었습니다.');
+      Get.back();
+    }
   }
 
   void saveExcel() async {
@@ -350,71 +349,77 @@ class _CreateViewState extends State<CreateView> {
         : widget.date.month.toString();
     File file = File('${dir.path}/$year$month.xlsx');
 
-    /// 추가할 행 정리
-    List<dynamic> addData = [
-      widget.nameController.text,
-      widget.contactController.text.length == 11
-          ? '${widget.contactController.text.substring(0, 3)}-${widget.contactController.text.substring(3, 7)}-${widget.contactController.text.substring(7, 11)}'
-          : widget.contactController.text,
-      '${widget.address} ${widget.addressDetailController.text}',
-      _type,
-      '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
-      '${widget.sizeController.text}L',
-      '${widget.costController.text}원',
-      widget.numOfCar,
-    ];
-
-    /// 기존 월에 해당하는 엑셀이 있는 경우
-    if (await file.exists()) {
-      /// 파일 읽기
-      var bytes = file.readAsBytesSync();
-
-      /// 엑셀파일로 열기
-      var excel = e.Excel.decodeBytes(bytes);
-
-      /// Sheet1 선택
-      e.Sheet sheetObject = excel['Sheet1'];
-
-      /// 가장 마지막 입력 row 확인
-      int maxRow = sheetObject.maxRows;
-
-      /// 행 추가
-      sheetObject.insertRowIterables(addData, maxRow);
-
-      /// 파일에 결과 저장
-      List<int>? result = excel.encode();
-      File('${dir.path}/$year$month.xlsx')
-        ..createSync(recursive: true)
-        ..writeAsBytesSync(result!);
-    } else {
-      /// 빈 엑셀파일 생성
-      var excel = e.Excel.createExcel();
-
-      /// Sheet1 선택
-      e.Sheet sheetObject = excel['Sheet1'];
-
-      /// 최상단 정보
-      List<dynamic> raw = [
-        "성명(소유자•관리자)".toString(),
-        "연락처".toString(),
-        "주소(수거장소)".toString(),
-        "구분".toString(),
-        "수거•확인일".toString(),
-        "분뇨수거용량(L)".toString(),
-        "수수료 납부금액".toString(),
-        "차량번호".toString(),
+    try {
+      /// 추가할 행 정리
+      List<dynamic> addData = [
+        widget.nameController.text,
+        widget.contactController.text.length == 11
+            ? '${widget.contactController.text.substring(0, 3)}-${widget.contactController.text.substring(3, 7)}-${widget.contactController.text.substring(7, 11)}'
+            : widget.contactController.text,
+        '${widget.address} ${widget.addressDetailController.text}',
+        _type,
+        '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
+        '${widget.sizeController.text}L',
+        '${widget.costController.text}원',
+        widget.numOfCar,
       ];
 
-      /// 최상단 정보 및 행 추가
-      sheetObject.insertRowIterables(raw, 0);
-      sheetObject.insertRowIterables(addData, 1);
+      /// 기존 월에 해당하는 엑셀이 있는 경우
+      if (await file.exists()) {
+        /// 파일 읽기
+        var bytes = file.readAsBytesSync();
 
-      /// 결과 저장
-      List<int>? result = excel.encode();
-      File('${dir.path}/$year$month.xlsx')
-        ..createSync(recursive: true)
-        ..writeAsBytesSync(result!);
-      File('${dir.path}/$year$month.xlsx');
+        /// 엑셀파일로 열기
+        var excel = e.Excel.decodeBytes(bytes);
+
+        /// Sheet1 선택
+        e.Sheet sheetObject = excel['Sheet1'];
+
+        /// 가장 마지막 입력 row 확인
+        int maxRow = sheetObject.maxRows;
+
+        /// 행 추가
+        sheetObject.insertRowIterables(addData, maxRow);
+
+        /// 파일에 결과 저장
+        List<int>? result = excel.encode();
+        File('${dir.path}/$year$month.xlsx')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(result!);
+      } else {
+        /// 빈 엑셀파일 생성
+        var excel = e.Excel.createExcel();
+
+        /// Sheet1 선택
+        e.Sheet sheetObject = excel['Sheet1'];
+
+        /// 최상단 정보
+        List<dynamic> raw = [
+          "성명(소유자•관리자)".toString(),
+          "연락처".toString(),
+          "주소(수거장소)".toString(),
+          "구분".toString(),
+          "수거•확인일".toString(),
+          "분뇨수거용량(L)".toString(),
+          "수수료 납부금액".toString(),
+          "차량번호".toString(),
+        ];
+
+        /// 최상단 정보 및 행 추가
+        sheetObject.insertRowIterables(raw, 0);
+        sheetObject.insertRowIterables(addData, 1);
+
+        /// 결과 저장
+        List<int>? result = excel.encode();
+        File('${dir.path}/$year$month.xlsx')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(result!);
+        File('${dir.path}/$year$month.xlsx');
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'excel!!! >>> $e';
+      });
     }
   }
 
@@ -656,12 +661,12 @@ class _CreateViewState extends State<CreateView> {
   Widget _buildExtraInfo() {
     return Column(
       children: [
-        const Text(
+        Text(
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               height: 1.5,
             ),
-            '위 기재 사항이 사실과 다름없음을 확인하고\n아래와 같이 서명합니다.\n* 수거업자 준수사항 위반 시 관련법에 따라 처분될 수 있음\n'),
+            '위 기재 사항이 사실과 다름없음을 확인하고\n아래와 같이 서명합니다.\n* 수거업자 준수사항 위반 시 관련법에 따라 처분될 수 있음\n$errorMessage'),
         Padding(
           padding: const EdgeInsets.only(right: 16.0),
           child: Row(
