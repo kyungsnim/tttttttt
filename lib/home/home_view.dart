@@ -155,12 +155,20 @@ class _HomeViewState extends State<HomeView> {
                                           ? true
                                           : false,
                                       numOfCar: '${data['numOfCar']}',
+                                      type: '${data['type']}' ?? '분뇨',
                                       png1Bytes: data['sign1'] != null ? Uint8List.fromList(
                                           data['sign1'].codeUnits) : Uint8List(1),
                                       png2Bytes: data['sign2'] != null ? Uint8List.fromList(
                                           data['sign2'].codeUnits) : Uint8List(1),
                                     ),
-                                  ),
+                                  )!.then((_) async {
+                                    final prefs = await SharedPreferences.getInstance();
+
+                                    setState(() {
+                                      _savedList = prefs.getStringList('savedList');
+                                      _savedList ??= [];
+                                    });
+                                  }),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12),

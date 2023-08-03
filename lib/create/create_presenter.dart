@@ -21,6 +21,7 @@ class CreatePresenter extends StatefulWidget {
   String? cost;
   bool? viewMode;
   String? numOfCar;
+  String? type;
   Uint8List? png1Bytes;
   Uint8List? png2Bytes;
 
@@ -35,6 +36,7 @@ class CreatePresenter extends StatefulWidget {
     this.cost,
     this.viewMode,
     this.numOfCar,
+    this.type,
     this.png1Bytes,
     this.png2Bytes,
     super.key});
@@ -53,6 +55,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
   String _size = '';
   String _cost = '';
   String _numOfCar = '91루0799';
+  String _type = '분뇨';
   Uint8List? _png1Bytes;
   Uint8List? _png2Bytes;
   TextEditingController _nameController = TextEditingController();
@@ -124,7 +127,8 @@ class _CreatePresenterState extends State<CreatePresenter> {
     penStrokeWidth: 2,
     penColor: Colors.black,
   );
-  List<String> _numOfCarList = ['91루0799', '89보7775', '80마3320'];
+  final List<String> _numOfCarList = ['91루0799', '89보7775', '80마3320'];
+  final List<String> _typeList = ['분뇨', '정화조', '오수처리시설'];
 
   @override
   void initState() {
@@ -145,6 +149,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
       _date = DateTime.parse(widget.date ?? DateTime.now().toString());
       _sizeController.text = widget.size ?? '';
       _costController.text = widget.cost ?? '';
+      _type = widget.type ?? '분뇨';
       _numOfCar = widget.numOfCar ?? '91루0799';
       _png1Bytes = widget.png1Bytes ?? Uint8List(1);
       _png2Bytes = widget.png2Bytes ?? Uint8List(1);
@@ -164,6 +169,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
       cost: _cost,
       numOfCar: _numOfCar,
       numOfCarList: _numOfCarList,
+      typeList: _typeList,
       nameController: _nameController,
       contactController: _contactController,
       addressDetailController: _addressDetailController,
@@ -171,19 +177,20 @@ class _CreatePresenterState extends State<CreatePresenter> {
       costController: _costController,
       png1Bytes: _png1Bytes ?? Uint8List(1),
       png2Bytes: _png2Bytes ?? Uint8List(1),
+      type: _type,
       viewMode: widget.viewMode ?? false,
-      // onTapSave: () => _onTapSave(),
-      onTapTempSave: (type) => _onTapTempSave(type),
+      onTapTempSave: () => _onTapTempSave(),
       onTapCancel: () => _onTapCancel(),
       onTapPickDate: () => _onTapPickDate(),
       onTapSearchAddress: () => _onTapSearchAddress(),
       onChangedNumOfCar: (value) => _onChangedNumOfCar(value),
+      onChangedType: (value) => _onChangedType(value),
       onTapCalendar: () => _onTapCalendar(),
       onTapSignature: (title) => _onTapSignature(title),
     );
   }
 
-  void _onTapTempSave(String type) async {
+  void _onTapTempSave() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     String saveYear = _date!.year.toString();
@@ -208,6 +215,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
       'size': _sizeController.text,
       'cost': _costController.text,
       'numOfCar': _numOfCar,
+      'type': _type,
       'saveType': 'tmp',
       'sign1': String.fromCharCodes(_png1Bytes ?? Uint8List(1)),
       'sign2': String.fromCharCodes(_png2Bytes ?? Uint8List(1)),
@@ -260,12 +268,12 @@ class _CreatePresenterState extends State<CreatePresenter> {
             children: [
               TypeAheadFormField(
                 noItemsFoundBuilder:(context){
-                  return ListTile(
+                  return const ListTile(
                     title: Text("검색 결과 없음", style: TextStyle(color: Color(0xffc8c8c8), fontWeight: FontWeight.w600, fontSize: 18),),
                   );
                 },
                 textFieldConfiguration: TextFieldConfiguration(
-                  style: TextStyle(color: Color(0xff333333), fontWeight: FontWeight.w500, fontSize: 18),
+                  style: const TextStyle(color: Color(0xff333333), fontWeight: FontWeight.w500, fontSize: 18),
                   autofocus: true,
                   onChanged: (String val){
                     setState(() {
@@ -291,8 +299,8 @@ class _CreatePresenterState extends State<CreatePresenter> {
                   List<String> school = suggestion.toString().split("/");
                   if(school.length>=2){
                     return ListTile(
-                      title: Text(school[0], style: TextStyle(color: Color(0xff333333), fontWeight: FontWeight.w500, fontSize: 18),),
-                      subtitle: Text(school[1], style: TextStyle(color: Color(0xff8d8d8d), fontWeight: FontWeight.w400, fontSize: 14),),
+                      title: Text(school[0], style: const TextStyle(color: Color(0xff333333), fontWeight: FontWeight.w500, fontSize: 18),),
+                      subtitle: Text(school[1], style: const TextStyle(color: Color(0xff8d8d8d), fontWeight: FontWeight.w400, fontSize: 14),),
                     );
                   }
                   return ListTile(
@@ -335,6 +343,12 @@ class _CreatePresenterState extends State<CreatePresenter> {
   void _onChangedNumOfCar(value) {
     setState(() {
       _numOfCar = value;
+    });
+  }
+
+  void _onChangedType(value) {
+    setState(() {
+      _type = value;
     });
   }
 
@@ -401,7 +415,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
                       },
                     ),
                     TextButton(
-                      child: Text(
+                      child: const Text(
                         '취소',
                         style: TextStyle(
                           color: Colors.grey,

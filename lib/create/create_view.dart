@@ -20,7 +20,9 @@ class CreateView extends StatefulWidget {
   String size;
   String cost;
   String numOfCar;
+  String type;
   final numOfCarList;
+  final typeList;
   Uint8List png1Bytes;
   Uint8List png2Bytes;
   bool? viewMode;
@@ -36,6 +38,7 @@ class CreateView extends StatefulWidget {
   Function onTapPickDate;
   Function onTapSearchAddress;
   Function onChangedNumOfCar;
+  Function onChangedType;
   Function onTapCalendar;
   Function onTapSignature;
 
@@ -49,7 +52,9 @@ class CreateView extends StatefulWidget {
       required this.size,
       required this.cost,
       required this.numOfCar,
+      required this.type,
       required this.numOfCarList,
+        required this.typeList,
       required this.png1Bytes,
       required this.png2Bytes,
       required this.nameController,
@@ -64,6 +69,7 @@ class CreateView extends StatefulWidget {
       required this.onTapPickDate,
       required this.onTapSearchAddress,
       required this.onChangedNumOfCar,
+      required this.onChangedType,
       required this.onTapCalendar,
       required this.onTapSignature,
       super.key});
@@ -74,7 +80,6 @@ class CreateView extends StatefulWidget {
 
 class _CreateViewState extends State<CreateView> {
   late pw.Document pdf;
-  String _type = '분뇨';
 
   String errorMessage = '';
 
@@ -108,7 +113,7 @@ class _CreateViewState extends State<CreateView> {
               _buildInputArea('주소(수거장소)', 'address'),
               _buildInputArea('상세주소', 'text',
                   controller: widget.addressDetailController),
-              _buildInputArea('구분', 'type'),
+              _buildInputArea('구분', 'select'),
               _buildInputArea('수거•확인일', 'calendar'),
               _buildInputArea('분뇨수거용량(L)', 'text',
                   controller: widget.sizeController),
@@ -135,13 +140,11 @@ class _CreateViewState extends State<CreateView> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buttonWidget(
-                            '저장', Color(0xFF0005D0), () => onTapSavePopup()),
+                            '저장', const Color(0xFF0005D0), () => onTapSavePopup()),
                         _buttonWidget(
                             '임시저장',
-                            Color(0xFF0005D0),
-                            () => widget.onTapTempSave(
-                                  _type,
-                                )),
+                            const Color(0xFF0005D0),
+                            () => widget.onTapTempSave()),
                         _buttonWidget(
                             '취소', Colors.grey, () => widget.onTapCancel()),
                       ],
@@ -158,7 +161,7 @@ class _CreateViewState extends State<CreateView> {
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: Text('저장하기'),
+            title: const Text('저장하기'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -172,7 +175,7 @@ class _CreateViewState extends State<CreateView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buttonWidget('저장', Color(0xFF0005D0), () {
+                    _buttonWidget('저장', const Color(0xFF0005D0), () {
                       onTapSave();
                       Get.back();
                     }),
@@ -227,7 +230,7 @@ class _CreateViewState extends State<CreateView> {
                 _buildPdfInputArea('주소(수거장소)', widget.address, ttf),
                 _buildPdfInputArea(
                     '상세주소', widget.addressDetailController.text, ttf),
-                _buildPdfInputArea('구분', _type, ttf),
+                _buildPdfInputArea('구분', widget.type, ttf),
                 _buildPdfInputArea(
                     '수거•확인일',
                     '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
@@ -305,6 +308,7 @@ class _CreateViewState extends State<CreateView> {
       'size': widget.sizeController.text,
       'cost': widget.costController.text,
       'numOfCar': widget.numOfCar,
+      'type': widget.type,
       'saveType': 'save',
       'sign1': sign1,
       'sign2': sign2,
@@ -357,7 +361,7 @@ class _CreateViewState extends State<CreateView> {
             ? '${widget.contactController.text.substring(0, 3)}-${widget.contactController.text.substring(3, 7)}-${widget.contactController.text.substring(7, 11)}'
             : widget.contactController.text,
         '${widget.address} ${widget.addressDetailController.text}',
-        _type,
+        widget.type,
         '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
         '${widget.sizeController.text}L',
         '${widget.costController.text}원',
@@ -872,11 +876,11 @@ class _CreateViewState extends State<CreateView> {
                                                 activeColor:
                                                     const Color(0xFF0005D0),
                                                 value: '분뇨',
-                                                groupValue: _type,
+                                                groupValue: widget.type,
                                                 onChanged: (value) {
                                                   if (!widget.viewMode!) {
                                                     setState(() {
-                                                      _type = value!;
+                                                      widget.type = value!;
                                                     });
                                                   }
                                                 },
@@ -892,11 +896,11 @@ class _CreateViewState extends State<CreateView> {
                                                 activeColor:
                                                     const Color(0xFF0005D0),
                                                 value: '정화조',
-                                                groupValue: _type,
+                                                groupValue: widget.type,
                                                 onChanged: (value) {
                                                   if (!widget.viewMode!) {
                                                     setState(() {
-                                                      _type = value!;
+                                                      widget.type = value!;
                                                     });
                                                   }
                                                 },
@@ -912,11 +916,11 @@ class _CreateViewState extends State<CreateView> {
                                                 activeColor:
                                                     const Color(0xFF0005D0),
                                                 value: '오수처리시설',
-                                                groupValue: _type,
+                                                groupValue: widget.type,
                                                 onChanged: (String? value) {
                                                   if (!widget.viewMode!) {
                                                     setState(() {
-                                                      _type = value!;
+                                                      widget.type = value!;
                                                     });
                                                   }
                                                 },
@@ -951,7 +955,7 @@ class _CreateViewState extends State<CreateView> {
                                       ),
                                     )
                                   : type == 'select'
-                                      ? widget.viewMode!
+                                      ? title == '차량번호' ? widget.viewMode!
                                           ? Container(
                                               alignment: Alignment.centerLeft,
                                               width: double.infinity,
@@ -1001,7 +1005,57 @@ class _CreateViewState extends State<CreateView> {
                                                 ),
                                               ),
                                             )
-                                      : const SizedBox(),
+                                      : widget.viewMode!
+                      ? Container(
+                    alignment: Alignment.centerLeft,
+                    width: double.infinity,
+                    color: Colors.yellowAccent
+                        .withOpacity(0),
+                    child: Padding(
+                      padding:
+                      const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 0),
+                      child: Text(
+                        widget.type,
+                        style: const TextStyle(
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  )
+                      : SizedBox(
+                    width: double.infinity,
+                    child: Padding(
+                      padding:
+                      const EdgeInsets.symmetric(
+                          horizontal: 5.0),
+                      child: DropdownButton<String>(
+                        elevation: 8,
+                        value: widget.type,
+                        underline: const SizedBox(),
+                        isExpanded: true,
+                        onChanged: (String? value) {
+                          if (!widget.viewMode!) {
+                            widget.onChangedType(
+                                value);
+                          }
+                        },
+                        items: widget.typeList
+                            .map<
+                            DropdownMenuItem<
+                                String>>(
+                                (String value) {
+                              return DropdownMenuItem<
+                                  String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                      ),
+                    ),
+                  )
+                      : const SizedBox(),
                 ),
               )),
         ],
