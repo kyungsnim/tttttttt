@@ -108,16 +108,16 @@ class _CreateViewState extends State<CreateView> {
               ),
               _buildInputArea('성명(소유자•관리자)', 'text',
                   controller: widget.nameController),
-              _buildInputArea('연락처', 'text',
+              _buildInputArea('연락처(전화번호)', 'text',
                   controller: widget.contactController),
               _buildInputArea('주소(수거장소)', 'address'),
               _buildInputArea('상세주소', 'text',
                   controller: widget.addressDetailController),
               _buildInputArea('구분', 'select'),
               _buildInputArea('수거•확인일', 'calendar'),
-              _buildInputArea('분뇨수거용량(L)', 'text',
+              _buildInputArea('분뇨수거용량(톤, m^3)', 'text',
                   controller: widget.sizeController),
-              _buildInputArea('수수료 납부금액', 'text',
+              _buildInputArea('수수료 납부액(천원)', 'text',
                   controller: widget.costController),
               _buildInputArea('차량번호', 'select'),
               const SizedBox(height: 20),
@@ -125,8 +125,8 @@ class _CreateViewState extends State<CreateView> {
               _buildSignatureArea(
                   '분뇨수집운반업체', () => widget.onTapSignature('분뇨수집운반업체')),
               const SizedBox(height: 10),
-              _buildSignatureArea('개인하수처리시설\n소유자',
-                  () => widget.onTapSignature('개인하수처리시설\n소유자')),
+              _buildSignatureArea('개인하수처리시설\n소유•관리자',
+                  () => widget.onTapSignature('개인하수처리시설\n소유•관리자')),
               const SizedBox(height: 20),
               widget.viewMode!
                   ? Row(
@@ -226,7 +226,7 @@ class _CreateViewState extends State<CreateView> {
                 ),
                 _buildPdfInputArea(
                     '성명(소유자•관리자)', widget.nameController.text, ttf),
-                _buildPdfInputArea('연락처', widget.contactController.text, ttf),
+                _buildPdfInputArea('연락처(전화번호)', widget.contactController.text, ttf),
                 _buildPdfInputArea('주소(수거장소)', widget.address, ttf),
                 _buildPdfInputArea(
                     '상세주소', widget.addressDetailController.text, ttf),
@@ -236,9 +236,9 @@ class _CreateViewState extends State<CreateView> {
                     '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
                     ttf),
                 _buildPdfInputArea(
-                    '분뇨수거용량(L)', '${widget.sizeController.text}L', ttf),
+                    '분뇨수거용량(톤, m^3)', '${widget.sizeController.text}L', ttf),
                 _buildPdfInputArea(
-                    '수수료 납부금액', '${widget.costController.text}원', ttf),
+                    '수수료 납부액(천원)', '${widget.costController.text}원', ttf),
                 _buildPdfInputArea('차량번호', widget.numOfCar, ttf),
                 pw.SizedBox(height: 20),
                 _buildPdfExtraInfo(ttf),
@@ -404,8 +404,8 @@ class _CreateViewState extends State<CreateView> {
           "주소(수거장소)".toString(),
           "구분".toString(),
           "수거•확인일".toString(),
-          "분뇨수거용량(L)".toString(),
-          "수수료 납부금액".toString(),
+          "분뇨수거용량(톤, m^3)".toString(),
+          "수수료 납부액(천원)".toString(),
           "차량번호".toString(),
         ];
 
@@ -528,12 +528,24 @@ class _CreateViewState extends State<CreateView> {
           ),
         ),
         pw.Padding(
-          padding: const pw.EdgeInsets.symmetric(vertical: 24.0),
+          padding: const pw.EdgeInsets.only(top: 24.0),
           child: pw.Text(
             '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
             textAlign: pw.TextAlign.center,
             style: pw.TextStyle(
               fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+              font: ttf,
+            ),
+          ),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(top: 12, bottom: 24.0),
+          child: pw.Text(
+            '영월군수 귀하',
+            textAlign: pw.TextAlign.center,
+            style: pw.TextStyle(
+              fontSize: 20,
               fontWeight: pw.FontWeight.bold,
               font: ttf,
             ),
@@ -698,12 +710,23 @@ class _CreateViewState extends State<CreateView> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24.0),
+          padding: const EdgeInsets.only(top: 24.0),
           child: Text(
             '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.only(top: 12, bottom: 24.0),
+          child: Text(
+            '영월군수 귀하',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -756,7 +779,7 @@ class _CreateViewState extends State<CreateView> {
                 child: SizedBox(
                   height: 30,
                   child: type == 'text'
-                      ? title == '분뇨수거용량(L)' || title == '수수료 납부금액'
+                      ? title == '분뇨수거용량(톤, m^3)' || title == '수수료 납부액(천원)'
                           ? TextField(
                               readOnly: widget.viewMode!,
                               autofocus: true,
@@ -766,10 +789,11 @@ class _CreateViewState extends State<CreateView> {
                                 FocusNode().nextFocus();
                               },
                               controller: controller!,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
+                                hintText: title == '수수료 납부액(천원)' ? '천원단위 입력' : '소수점 첫째자리까지 입력 가능',
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.symmetric(
-                                  vertical: 14,
+                                  vertical: 12,
                                   horizontal: 5,
                                 ),
                               ),
@@ -781,10 +805,10 @@ class _CreateViewState extends State<CreateView> {
                               inputFormatters: [
                                 /// 연락처 입력일 때는 숫자와 하이픈만 사용 가능
                                 FilteringTextInputFormatter.allow(
-                                    RegExp("[0-9]")),
+                                    RegExp(r"^[0-9]{0,9}.{0,2}")),
                               ],
                             )
-                          : title == '연락처'
+                          : title == '연락처(전화번호)'
                               ? TextField(
                                   readOnly: widget.viewMode!,
                                   autofocus: true,
@@ -823,10 +847,11 @@ class _CreateViewState extends State<CreateView> {
                                     FocusNode().nextFocus();
                                   },
                                   controller: controller!,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
+                                    hintText: title == '상세주소' ? '도로명 주소 입력' : '',
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 14,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 12,
                                       horizontal: 5,
                                     ),
                                   ),

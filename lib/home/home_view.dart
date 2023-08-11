@@ -119,6 +119,7 @@ class _HomeViewState extends State<HomeView> {
                             child: Row(
                               // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
+                                _buildSavedListTitle('저장', 1),
                                 _buildSavedListTitle('구분', 1),
                                 _buildSavedListTitle('날짜', 2),
                                 _buildSavedListTitle('소유자', 2),
@@ -185,6 +186,10 @@ class _HomeViewState extends State<HomeView> {
                                             data['saveType'] == 'save'
                                                 ? '저장'
                                                 : '임시',
+                                            1),
+                                        _buildSavedListDescription(
+                                            data['type'] != null ? '${data['type']}'.substring(0, 2)
+                                            : '',
                                             1),
                                         _buildSavedListDescription(
                                             '${data['date']}', 2),

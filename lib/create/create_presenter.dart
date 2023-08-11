@@ -285,11 +285,11 @@ class _CreatePresenterState extends State<CreatePresenter> {
                     });
                   },
                   controller: _typeAheadController,
-                  decoration: const InputDecoration(
-                    hintText: "주소를 입력하세요.",
-                    hintStyle: TextStyle(color: Color(0xffdedede), fontWeight: FontWeight.w600, fontSize: 18),
-                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xffdedede), width: 2),),
-                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xfffa5f00), width: 2),),
+                  decoration: InputDecoration(
+                    hintText: "해당리를 검색하여 선택합니다.",
+                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.7), fontSize: 16),
+                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xffdedede), width: 2),),
+                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xfffa5f00), width: 2),),
                   ),
                 ),
                 suggestionsCallback: (pattern) {
