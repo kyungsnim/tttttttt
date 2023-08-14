@@ -25,21 +25,21 @@ class CreatePresenter extends StatefulWidget {
   Uint8List? png1Bytes;
   Uint8List? png2Bytes;
 
-  CreatePresenter({
-    this.id,
-    this.name,
-    this.contact,
-    this.address,
-    this.addressDetail,
-    this.date,
-    this.size,
-    this.cost,
-    this.viewMode,
-    this.numOfCar,
-    this.type,
-    this.png1Bytes,
-    this.png2Bytes,
-    super.key});
+  CreatePresenter(
+      {this.id,
+      this.name,
+      this.contact,
+      this.address,
+      this.addressDetail,
+      this.date,
+      this.size,
+      this.cost,
+      this.viewMode,
+      this.numOfCar,
+      this.type,
+      this.png1Bytes,
+      this.png2Bytes,
+      super.key});
 
   @override
   State<CreatePresenter> createState() => _CreatePresenterState();
@@ -51,7 +51,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
   String _contact = '';
   String _address = '';
   String _addressDetail = '';
-    DateTime? _date = DateTime.now();
+  DateTime? _date = DateTime.now();
   String _size = '';
   String _cost = '';
   String _numOfCar = '91루0799';
@@ -177,7 +177,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
       costController: _costController,
       png1Bytes: _png1Bytes ?? Uint8List(1),
       png2Bytes: _png2Bytes ?? Uint8List(1),
-      type: _type,
+      type: _type ?? '분뇨',
       viewMode: widget.viewMode ?? false,
       onTapTempSave: () => _onTapTempSave(),
       onTapCancel: () => _onTapCancel(),
@@ -187,6 +187,7 @@ class _CreatePresenterState extends State<CreatePresenter> {
       onChangedType: (value) => _onChangedType(value),
       onTapCalendar: () => _onTapCalendar(),
       onTapSignature: (title) => _onTapSignature(title),
+      onTapDelete: () => _onTapDelete(),
     );
   }
 
@@ -194,12 +195,9 @@ class _CreatePresenterState extends State<CreatePresenter> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     String saveYear = _date!.year.toString();
-    String saveMonth = _date!.month < 10
-        ? '0${_date!.month}'
-        : _date!.month.toString();
-    String saveDay = _date!.day < 10
-        ? '0${_date!.day}'
-        : _date!.day.toString();
+    String saveMonth =
+        _date!.month < 10 ? '0${_date!.month}' : _date!.month.toString();
+    String saveDay = _date!.day < 10 ? '0${_date!.day}' : _date!.day.toString();
 
     /// 확인서 목록용 리스트 저장
     List<String>? savedList = prefs.getStringList('savedList');
@@ -226,7 +224,6 @@ class _CreatePresenterState extends State<CreatePresenter> {
       savedList.add(json.encode(savedMap));
       prefs.setStringList('savedList', savedList);
     } else {
-
       /// 기존에 임시저장했던 데이터가 있다면 그건 삭제처리
       if (_id.isNotEmpty) {
         for (int i = 0; i < savedList.length; i++) {
@@ -248,6 +245,28 @@ class _CreatePresenterState extends State<CreatePresenter> {
     Get.back();
   }
 
+  void _onTapDelete() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    List<String> _savedList = [];
+
+    setState(() {
+      _savedList = prefs.getStringList('savedList') ?? [];
+      _savedList ??= [];
+    });
+
+    for (int i = 0; i < _savedList.length; i++) {
+      Map<String, dynamic> data = json.decode(_savedList[i]);
+      if (data['id'] == _id) {
+        _savedList.removeAt(i);
+      }
+    }
+
+    prefs.setStringList('savedList', _savedList);
+    Fluttertoast.showToast(msg: '삭제 되었습니다.');
+    Get.back();
+  }
+
   void _onTapPickDate() async {
     _date = await showRoundedDatePicker(
       context: context,
@@ -259,81 +278,108 @@ class _CreatePresenterState extends State<CreatePresenter> {
 
   void _onTapSearchAddress() async {
     showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('주소'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TypeAheadFormField(
-                noItemsFoundBuilder:(context){
-                  return const ListTile(
-                    title: Text("검색 결과 없음", style: TextStyle(color: Color(0xffc8c8c8), fontWeight: FontWeight.w600, fontSize: 18),),
-                  );
-                },
-                textFieldConfiguration: TextFieldConfiguration(
-                  style: const TextStyle(color: Color(0xff333333), fontWeight: FontWeight.w500, fontSize: 18),
-                  autofocus: true,
-                  onChanged: (String val){
-                    setState(() {
-                      _suggestionAddress = [];
-                      _searchSchool(val);
-                      // .then((value) {
-                      //   if (value != null) value.forEach((item) => _suggestionAddress.add("$item"));
-                      // });
-                    });
-                  },
-                  controller: _typeAheadController,
-                  decoration: InputDecoration(
-                    hintText: "해당리를 검색하여 선택합니다.",
-                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.7), fontSize: 16),
-                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xffdedede), width: 2),),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xfffa5f00), width: 2),),
-                  ),
-                ),
-                suggestionsCallback: (pattern) {
-                  return _suggestionAddress;
-                },
-                itemBuilder: (context, suggestion) {
-                  List<String> school = suggestion.toString().split("/");
-                  if(school.length>=2){
-                    return ListTile(
-                      title: Text(school[0], style: const TextStyle(color: Color(0xff333333), fontWeight: FontWeight.w500, fontSize: 18),),
-                      subtitle: Text(school[1], style: const TextStyle(color: Color(0xff8d8d8d), fontWeight: FontWeight.w400, fontSize: 14),),
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('주소'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TypeAheadFormField(
+                  noItemsFoundBuilder: (context) {
+                    return const ListTile(
+                      title: Text(
+                        "검색 결과 없음",
+                        style: TextStyle(
+                            color: Color(0xffc8c8c8),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18),
+                      ),
                     );
-                  }
-                  return ListTile(
-                    title: Text(suggestion.toString()),
-                  );
-                },
-                transitionBuilder: (context, suggestionsBox, controller) {
-                  return suggestionsBox;
-                },
-                onSuggestionSelected: (suggestion) {
-                  setState(() {
-                    _address = suggestion;
-                  });
-                  Get.back();
-                  FocusManager.instance.primaryFocus?.unfocus();
-                },
-                validator: (String? value) {
-                  if (value!.isEmpty) {
-                    return '주소를 입력해주세요.';
-                  }
-                  return null;
-                },
-                onSaved: (value) {},
-              ),
-            ],
-          ),
-        );
-      }
-    );
+                  },
+                  textFieldConfiguration: TextFieldConfiguration(
+                    style: const TextStyle(
+                        color: Color(0xff333333),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18),
+                    autofocus: true,
+                    onChanged: (String val) {
+                      setState(() {
+                        _suggestionAddress = [];
+                        _searchSchool(val);
+                        // .then((value) {
+                        //   if (value != null) value.forEach((item) => _suggestionAddress.add("$item"));
+                        // });
+                      });
+                    },
+                    controller: _typeAheadController,
+                    decoration: InputDecoration(
+                      hintText: "해당리를 검색하여 선택합니다.",
+                      hintStyle: TextStyle(
+                          color: Colors.grey.withOpacity(0.7), fontSize: 16),
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide:
+                            BorderSide(color: Color(0xffdedede), width: 2),
+                      ),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide:
+                            BorderSide(color: Color(0xfffa5f00), width: 2),
+                      ),
+                    ),
+                  ),
+                  suggestionsCallback: (pattern) {
+                    return _suggestionAddress;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    List<String> school = suggestion.toString().split("/");
+                    if (school.length >= 2) {
+                      return ListTile(
+                        title: Text(
+                          school[0],
+                          style: const TextStyle(
+                              color: Color(0xff333333),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18),
+                        ),
+                        subtitle: Text(
+                          school[1],
+                          style: const TextStyle(
+                              color: Color(0xff8d8d8d),
+                              fontWeight: FontWeight.w400,
+                              fontSize: 14),
+                        ),
+                      );
+                    }
+                    return ListTile(
+                      title: Text(suggestion.toString()),
+                    );
+                  },
+                  transitionBuilder: (context, suggestionsBox, controller) {
+                    return suggestionsBox;
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    setState(() {
+                      _address = suggestion;
+                    });
+                    Get.back();
+                    FocusManager.instance.primaryFocus?.unfocus();
+                  },
+                  validator: (String? value) {
+                    if (value!.isEmpty) {
+                      return '주소를 입력해주세요.';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) {},
+                ),
+              ],
+            ),
+          );
+        });
   }
 
   _searchSchool(String val) {
-    for(int i = 0; i < _addressList.length; i++) {
+    for (int i = 0; i < _addressList.length; i++) {
       if (_addressList[i].contains(val)) {
         _suggestionAddress.add(_addressList[i]);
       }
@@ -384,7 +430,9 @@ class _CreatePresenterState extends State<CreatePresenter> {
                     border: Border.all(width: 0.5),
                   ),
                   child: Signature(
-                    controller: title == '분뇨수집운반업체' ? _sign1Controller : _sign2Controller,
+                    controller: title == '분뇨수집운반업체'
+                        ? _sign1Controller
+                        : _sign2Controller,
                     width: 200,
                     height: 100,
                     backgroundColor: Colors.white,

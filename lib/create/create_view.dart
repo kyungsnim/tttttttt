@@ -41,6 +41,7 @@ class CreateView extends StatefulWidget {
   Function onChangedType;
   Function onTapCalendar;
   Function onTapSignature;
+  Function onTapDelete;
 
   CreateView(
       {required this.id,
@@ -54,7 +55,7 @@ class CreateView extends StatefulWidget {
       required this.numOfCar,
       required this.type,
       required this.numOfCarList,
-        required this.typeList,
+      required this.typeList,
       required this.png1Bytes,
       required this.png2Bytes,
       required this.nameController,
@@ -72,6 +73,7 @@ class CreateView extends StatefulWidget {
       required this.onChangedType,
       required this.onTapCalendar,
       required this.onTapSignature,
+      required this.onTapDelete,
       super.key});
 
   @override
@@ -115,7 +117,7 @@ class _CreateViewState extends State<CreateView> {
                   controller: widget.addressDetailController),
               _buildInputArea('구분', 'select'),
               _buildInputArea('수거•확인일', 'calendar'),
-              _buildInputArea('분뇨수거용량(톤, m^3)', 'text',
+              _buildInputArea('분뇨수거용량(톤, ㎥)', 'text',
                   controller: widget.sizeController),
               _buildInputArea('수수료 납부액(천원)', 'text',
                   controller: widget.costController),
@@ -134,19 +136,22 @@ class _CreateViewState extends State<CreateView> {
                       children: [
                         _buttonWidget(
                             '목록', Colors.grey, () => widget.onTapCancel()),
+                        SizedBox(width: 10),
+                        _buttonWidget(
+                            '삭제', Colors.red, () => widget.onTapDelete()),
                       ],
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buttonWidget(
-                            '저장', const Color(0xFF0005D0), () => onTapSavePopup()),
-                        _buttonWidget(
-                            '임시저장',
-                            const Color(0xFF0005D0),
+                        _buttonWidget('저장', const Color(0xFF0005D0),
+                            () => onTapSavePopup()),
+                        _buttonWidget('임시저장', const Color(0xFF0005D0),
                             () => widget.onTapTempSave()),
                         _buttonWidget(
                             '취소', Colors.grey, () => widget.onTapCancel()),
+                        _buttonWidget(
+                            '삭제', Colors.red, () => widget.onTapDelete()),
                       ],
                     ),
             ],
@@ -226,7 +231,8 @@ class _CreateViewState extends State<CreateView> {
                 ),
                 _buildPdfInputArea(
                     '성명(소유자•관리자)', widget.nameController.text, ttf),
-                _buildPdfInputArea('연락처(전화번호)', widget.contactController.text, ttf),
+                _buildPdfInputArea(
+                    '연락처(전화번호)', widget.contactController.text, ttf),
                 _buildPdfInputArea('주소(수거장소)', widget.address, ttf),
                 _buildPdfInputArea(
                     '상세주소', widget.addressDetailController.text, ttf),
@@ -236,14 +242,14 @@ class _CreateViewState extends State<CreateView> {
                     '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
                     ttf),
                 _buildPdfInputArea(
-                    '분뇨수거용량(톤, m^3)', '${widget.sizeController.text}L', ttf),
+                    '분뇨수거용량(톤, ㎥)', '${widget.sizeController.text}(톤, ㎥)', ttf),
                 _buildPdfInputArea(
-                    '수수료 납부액(천원)', '${widget.costController.text}원', ttf),
+                    '수수료 납부액(천원)', '${widget.costController.text}천원', ttf),
                 _buildPdfInputArea('차량번호', widget.numOfCar, ttf),
                 pw.SizedBox(height: 20),
                 _buildPdfExtraInfo(ttf),
                 _buildPdfSignatureArea('분뇨수집운반업체', ttf),
-                _buildPdfSignatureArea('개인하수처리시설\n소유자', ttf),
+                _buildPdfSignatureArea('개인하수처리시설\n소유•관리자', ttf),
               ],
             );
           }),
@@ -278,7 +284,7 @@ class _CreateViewState extends State<CreateView> {
     await file.writeAsBytes(bytes);
 
     /// 엑셀 만들기
-    saveExcel();
+    // saveExcel();
 
     String saveYear = widget.date.year.toString();
     String saveMonth = widget.date.month < 10
@@ -363,8 +369,8 @@ class _CreateViewState extends State<CreateView> {
         '${widget.address} ${widget.addressDetailController.text}',
         widget.type,
         '${widget.date.year}년 ${widget.date.month}월 ${widget.date.day}일',
-        '${widget.sizeController.text}L',
-        '${widget.costController.text}원',
+        '${widget.sizeController.text}(톤, ㎥)',
+        '${widget.costController.text}천원',
         widget.numOfCar,
       ];
 
@@ -404,7 +410,7 @@ class _CreateViewState extends State<CreateView> {
           "주소(수거장소)".toString(),
           "구분".toString(),
           "수거•확인일".toString(),
-          "분뇨수거용량(톤, m^3)".toString(),
+          "분뇨수거용량(톤, ㎥)".toString(),
           "수수료 납부액(천원)".toString(),
           "차량번호".toString(),
         ];
@@ -779,7 +785,7 @@ class _CreateViewState extends State<CreateView> {
                 child: SizedBox(
                   height: 30,
                   child: type == 'text'
-                      ? title == '분뇨수거용량(톤, m^3)' || title == '수수료 납부액(천원)'
+                      ? title == '분뇨수거용량(톤, ㎥)' || title == '수수료 납부액(천원)'
                           ? TextField(
                               readOnly: widget.viewMode!,
                               autofocus: true,
@@ -790,7 +796,9 @@ class _CreateViewState extends State<CreateView> {
                               },
                               controller: controller!,
                               decoration: InputDecoration(
-                                hintText: title == '수수료 납부액(천원)' ? '천원단위 입력' : '소수점 첫째자리까지 입력 가능',
+                                hintText: title == '수수료 납부액(천원)'
+                                    ? '천원단위 입력'
+                                    : '소수점 첫째자리까지 입력 가능',
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.symmetric(
                                   vertical: 12,
@@ -848,7 +856,8 @@ class _CreateViewState extends State<CreateView> {
                                   },
                                   controller: controller!,
                                   decoration: InputDecoration(
-                                    hintText: title == '상세주소' ? '도로명 주소 입력' : '',
+                                    hintText:
+                                        title == '상세주소' ? '도로명 주소 입력' : '',
                                     border: InputBorder.none,
                                     contentPadding: const EdgeInsets.symmetric(
                                       vertical: 12,
@@ -980,107 +989,116 @@ class _CreateViewState extends State<CreateView> {
                                       ),
                                     )
                                   : type == 'select'
-                                      ? title == '차량번호' ? widget.viewMode!
-                                          ? Container(
-                                              alignment: Alignment.centerLeft,
-                                              width: double.infinity,
-                                              color: Colors.yellowAccent
-                                                  .withOpacity(0),
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
+                                      ? title == '차량번호'
+                                          ? widget.viewMode!
+                                              ? Container(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  width: double.infinity,
+                                                  color: Colors.yellowAccent
+                                                      .withOpacity(0),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                         horizontal: 5,
                                                         vertical: 0),
-                                                child: Text(
-                                                  widget.numOfCar,
-                                                  style: const TextStyle(
-                                                    color: Colors.black,
+                                                    child: Text(
+                                                      widget.numOfCar,
+                                                      style: const TextStyle(
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                            )
-                                          : SizedBox(
-                                              width: double.infinity,
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
+                                                )
+                                              : SizedBox(
+                                                  width: double.infinity,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                         horizontal: 5.0),
-                                                child: DropdownButton<String>(
-                                                  elevation: 8,
-                                                  value: widget.numOfCar,
-                                                  underline: const SizedBox(),
-                                                  isExpanded: true,
-                                                  onChanged: (String? value) {
-                                                    if (!widget.viewMode!) {
-                                                      widget.onChangedNumOfCar(
-                                                          value);
-                                                    }
-                                                  },
-                                                  items: widget.numOfCarList
-                                                      .map<
+                                                    child:
+                                                        DropdownButton<String>(
+                                                      elevation: 8,
+                                                      value: widget.numOfCar,
+                                                      underline:
+                                                          const SizedBox(),
+                                                      isExpanded: true,
+                                                      onChanged:
+                                                          (String? value) {
+                                                        if (!widget.viewMode!) {
+                                                          widget
+                                                              .onChangedNumOfCar(
+                                                                  value);
+                                                        }
+                                                      },
+                                                      items: widget.numOfCarList
+                                                          .map<
+                                                              DropdownMenuItem<
+                                                                  String>>((String
+                                                              value) {
+                                                        return DropdownMenuItem<
+                                                            String>(
+                                                          value: value,
+                                                          child: Text(value),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ),
+                                                )
+                                          : widget.viewMode!
+                                              ? Container(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  width: double.infinity,
+                                                  color: Colors.yellowAccent
+                                                      .withOpacity(0),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 5,
+                                                        vertical: 0),
+                                                    child: Text(
+                                                      widget.type,
+                                                      style: const TextStyle(
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              : SizedBox(
+                                                  width: double.infinity,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 5.0),
+                                                    child:
+                                                        DropdownButton<String>(
+                                                      elevation: 8,
+                                                      value: widget.type,
+                                                      underline:
+                                                          const SizedBox(),
+                                                      isExpanded: true,
+                                                      onChanged:
+                                                          (String? value) {
+                                                        if (!widget.viewMode!) {
+                                                          widget.onChangedType(
+                                                              value);
+                                                        }
+                                                      },
+                                                      items: widget.typeList.map<
                                                               DropdownMenuItem<
                                                                   String>>(
                                                           (String value) {
-                                                    return DropdownMenuItem<
-                                                        String>(
-                                                      value: value,
-                                                      child: Text(value),
-                                                    );
-                                                  }).toList(),
-                                                ),
-                                              ),
-                                            )
-                                      : widget.viewMode!
-                      ? Container(
-                    alignment: Alignment.centerLeft,
-                    width: double.infinity,
-                    color: Colors.yellowAccent
-                        .withOpacity(0),
-                    child: Padding(
-                      padding:
-                      const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 0),
-                      child: Text(
-                        widget.type,
-                        style: const TextStyle(
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                  )
-                      : SizedBox(
-                    width: double.infinity,
-                    child: Padding(
-                      padding:
-                      const EdgeInsets.symmetric(
-                          horizontal: 5.0),
-                      child: DropdownButton<String>(
-                        elevation: 8,
-                        value: widget.type,
-                        underline: const SizedBox(),
-                        isExpanded: true,
-                        onChanged: (String? value) {
-                          if (!widget.viewMode!) {
-                            widget.onChangedType(
-                                value);
-                          }
-                        },
-                        items: widget.typeList
-                            .map<
-                            DropdownMenuItem<
-                                String>>(
-                                (String value) {
-                              return DropdownMenuItem<
-                                  String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                      ),
-                    ),
-                  )
-                      : const SizedBox(),
+                                                        return DropdownMenuItem<
+                                                            String>(
+                                                          value: value,
+                                                          child: Text(value),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ),
+                                                )
+                                      : const SizedBox(),
                 ),
               )),
         ],
